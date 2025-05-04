@@ -19,6 +19,7 @@ const std = @import("std");
 //            |-------------------------| High Addresses
 // total_size |      (End of RAM)       |
 //            +-------------------------+
+const RAM_BASE: usize = 0x00000000;
 
 pub const RAM = struct {
     buffer: []u8, // entire usable RAM
@@ -35,16 +36,16 @@ pub const RAM = struct {
     heap_start: usize,
     // NOTE: heap_current_break: usize, // Current top of allocated heap data
 
-    pub fn init(buffer: []u8, ram_base_addr: usize, stack_allocation_size: usize) !RAM {
+    pub fn init(buffer: []u8, stack_allocation_size: usize) !RAM {
         if (buffer.len == 0 or stack_allocation_size == 0 or stack_allocation_size > buffer.len) {
             return error.InvalidMemoryConfiguration;
         }
 
-        const effective_ram_end = ram_base_addr + buffer.len;
+        const effective_ram_end = RAM_BASE + buffer.len;
 
         return RAM{
             .buffer = buffer,
-            .ram_base = ram_base_addr,
+            .ram_base = RAM_BASE,
             .ram_end = effective_ram_end,
             .stack_top = effective_ram_end,
             .stack_limit = effective_ram_end - stack_allocation_size,
