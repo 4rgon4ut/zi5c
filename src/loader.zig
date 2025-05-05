@@ -130,10 +130,9 @@ pub fn loadELF(ram: *RAM, path: []const u8) !void {
 
                 // Fill the BSS slice with zeroes
                 @memset(bss_slice, 0);
-
-                highest_addr_used = @max(highest_addr_used, segment_end);
-                std.log.debug("  Segment processing complete. Highest address used so far: 0x{x}", .{highest_addr_used});
             }
+            highest_addr_used = @max(highest_addr_used, segment_end);
+            std.log.debug("  Segment processing complete. Highest address used so far: 0x{x}", .{highest_addr_used});
         }
     }
 

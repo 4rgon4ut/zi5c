@@ -59,7 +59,5 @@ test "loadELF function test" {
     // const expected_heap_start = (data_offset_in_ram + expected_data_bytes.len + ram.ram_base);
     // try testing.expectEqual(expected_heap_start, ram.heap_start);
 
-    // TODO: why heap start is zero?
-    std.debug.print("Heap start address: 0x{X:0>8}", .{ram.heap_start});
     ram.printLayout();
 }
