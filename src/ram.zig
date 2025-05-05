@@ -19,7 +19,7 @@ const std = @import("std");
 //            |-------------------------| High Addresses
 // total_size |      (End of RAM)       |
 //            +-------------------------+
-const RAM_BASE: usize = 0x00000000;
+pub const RAM_BASE: usize = 0x00000000;
 
 pub const RAM = struct {
     buffer: []u8, // entire usable RAM

@@ -13,7 +13,7 @@ pub fn loadELF(ram: *RAM, path: []const u8) !void {
 
     // 1. Use elf.Header.read to parse the header
     // This handles reading the first 64 bytes, magic check, class, endianness etc.
-    const header = try elf.Header.read(file) catch |err| {
+    const header = elf.Header.read(file) catch |err| {
         std.log.err("Failed to parse ELF header: {any}", .{err});
         return error.InvalidElfHeader;
     };
@@ -66,8 +66,8 @@ pub fn loadELF(ram: *RAM, path: []const u8) !void {
             // vm accepts only 32b elfs so we can cast it safely
             const vaddr = @as(elf.Elf32_Addr, @intCast(phdr.p_vaddr));
             const offset = @as(elf.Elf32_Off, @intCast(phdr.p_offset));
-            const filesz = @as(elf.Elf_Word, @intCast(phdr.p_filesz));
-            const memsz = @as(elf.Elf_Word, @intCast(phdr.p_memsz));
+            const filesz = @as(elf.Word, @intCast(phdr.p_filesz));
+            const memsz = @as(elf.Word, @intCast(phdr.p_memsz));
 
             // Basic sanity checks
             if (memsz < filesz) {
@@ -104,7 +104,7 @@ pub fn loadELF(ram: *RAM, path: []const u8) !void {
                 try file.seekTo(offset);
 
                 // Read exactly 'filesz' bytes from the file into the RAM slice
-                try file.reader().readNoEof(dest_slice) catch |err| {
+                file.reader().readNoEof(dest_slice) catch |err| {
                     std.log.err("Failed to read segment data from file: {any}", .{err});
                     // Distinguish EOF error (truncated file) from other errors
                     if (err == error.EndOfStream) {
@@ -129,7 +129,7 @@ pub fn loadELF(ram: *RAM, path: []const u8) !void {
                 const bss_slice = ram.buffer[bss_start_addr .. bss_start_addr + bss_size];
 
                 // Fill the BSS slice with zeroes
-                mem.set(u8, bss_slice, 0);
+                @memset(bss_slice, 0);
 
                 highest_addr_used = @max(highest_addr_used, segment_end);
                 std.log.debug("  Segment processing complete. Highest address used so far: 0x{x}", .{highest_addr_used});
