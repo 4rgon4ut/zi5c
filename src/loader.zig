@@ -140,7 +140,7 @@ pub fn loadELF(ram: *RAM, path: []const u8) !void {
     std.log.info("Finished processing all program headers.", .{});
 
     // Heap starts immediately after the last loaded byte (including BSS)
-    ram.heap_start = highest_addr_used;
+    try ram.setHeapStart(highest_addr_used);
     std.log.info("Setting Heap Start address to: 0x{x}", .{ram.heap_start});
 
     if (ram.heap_start > ram.stack_limit) {
