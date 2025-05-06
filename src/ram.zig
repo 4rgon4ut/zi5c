@@ -91,4 +91,64 @@ pub const RAM = struct {
         }
         std.debug.print("--- End of Summary ---\n", .{});
     }
+
+    fn validateAccess(self: *RAM, addr: u32, size: u32) !void {
+        if (size == 0) {
+            return error.InvalidAccessSize;
+        }
+
+        // TODO: probably check that size is in [1, 2, 4, 8]
+        // (now guaranteed by the provided ram api functions, i.e. writeWord)
+        if (size != 1 and addr % size != 0) {
+            return error.InvalidAlignment;
+        }
+
+        if (size > (self.ram_end - addr)) {
+            return error.OutOfBounds;
+        }
+    }
+
+    pub fn readByte(
+        self: *const RAM,
+        addr: u32,
+    ) !u8 {
+        try self.validateAccess(addr, 1);
+
+        return self.buffer[addr];
+    }
+
+    pub fn writeByte(self: *RAM, addr: u32, value: u8) !void {
+        try self.validateAccess(addr, 1);
+
+        const buff_idx = @as(usize, addr);
+        self.buffer[buff_idx] = value;
+    }
+
+    pub fn readHalfWord(self: *const RAM, addr: u32) !u16 {
+        try self.validateAccess(addr, 2);
+
+        const buff_idx = @as(usize, addr);
+        return std.mem.readInt(u16, self.buffer[buff_idx .. buff_idx + 2], .little); // RISC-V is typically little-endian
+    }
+
+    pub fn writeHalfWord(self: *RAM, addr: u32, value: u16) !void {
+        try self.validateAccess(addr, 2);
+
+        const buff_idx = @as(usize, addr);
+        std.mem.writeInt(u16, self.buffer[buff_idx .. buff_idx + 2], value, .little);
+    }
+
+    pub fn readWord(self: *const RAM, addr: u32) !u32 {
+        try self.validateAccess(addr, 4);
+
+        const buff_idx = @as(usize, addr);
+        return std.mem.readInt(u32, self.buffer[buff_idx .. buff_idx + 4], .little); // RISC-V is typically little-endian
+    }
+
+    pub fn writeWord(self: *RAM, addr: u32, value: u32) !void {
+        try self.validateAccess(addr, 4);
+
+        const buff_idx = @as(usize, addr);
+        std.mem.writeInt(u32, self.buffer[buff_idx .. buff_idx + 4], value, .little);
+    }
 };
