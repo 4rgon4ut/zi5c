@@ -46,7 +46,7 @@ pub fn loadELF(ram: *RAM, path: []const u8) !void {
         return error.NoProgramHeaders;
     }
 
-    var highest_addr_used: usize = RAM_BASE;
+    var highest_addr_used: u32 = RAM_BASE;
     var ph_iter = header.program_header_iterator(file);
 
     while (try ph_iter.next()) |phdr| {
@@ -79,7 +79,7 @@ pub fn loadELF(ram: *RAM, path: []const u8) !void {
             }
 
             // BOUNDS CHECKS
-            const segment_end: usize = @intCast(vaddr + memsz);
+            const segment_end: u32 = @intCast(vaddr + memsz);
 
             if (segment_end > ram.ram_end) {
                 std.log.err("Segment end address 0x{x} exceeds RAM limit 0x{x}", .{ segment_end, ram.ram_end });

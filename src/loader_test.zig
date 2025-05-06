@@ -6,8 +6,8 @@ test "loadELF function test" {
     const testing = std.testing;
 
     // 1. Setup RAM
-    const test_ram_size: usize = 64 * 1024; // 64K, should be enough for test.elf
-    const stack_size: usize = 4 * 1024; // 4K stack
+    const test_ram_size: u32 = 64 * 1024; // 64K, should be enough for test.elf
+    const stack_size: u32 = 4 * 1024; // 4K stack
     var test_ram_buffer: [test_ram_size]u8 = undefined;
     // Initialize RAM to a known state (e.g., zeros) to ensure loading works correctly
     @memset(&test_ram_buffer, 0x00);
@@ -29,7 +29,7 @@ test "loadELF function test" {
         0x33, 0x06, 0xb5, 0x00, // => .word 0x00b50633
         0xEF, 0xBE, 0xAD, 0xDE, // => .word 0xDEADBEEF
     };
-    const text_offset_in_ram: usize = 0x00000000 - ram.ram_base; // Should be 0
+    const text_offset_in_ram: u32 = 0x00000000 - ram.ram_base; // Should be 0
 
     // .data section was linked immediately after .text (aligned to 4 bytes)
     const expected_data_bytes = [_]u8{
@@ -38,7 +38,7 @@ test "loadELF function test" {
     };
     // Calculate where data should start. Text has 4 words = 16 bytes.
     // Linker script aligns, so data starts right after text at offset 16.
-    const data_offset_in_ram: usize = (0x00000000 + 16) - ram.ram_base; // Should be 16
+    const data_offset_in_ram: u32 = (0x00000000 + 16) - ram.ram_base; // Should be 16
 
     // Perform checks
     try testing.expectEqualSlices(u8, &expected_text_bytes, ram.buffer[text_offset_in_ram .. text_offset_in_ram + expected_text_bytes.len]);

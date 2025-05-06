@@ -4,8 +4,8 @@ const RAM = @import("ram.zig").RAM;
 test "RAM init: valid configuration" {
     var buffer_mem: [1024 * 1024]u8 = undefined; // 1MB
     const ram_buffer = buffer_mem[0..];
-    const base_addr: usize = 0x1000;
-    const stack_size: usize = 256 * 1024; // 256KB
+    const base_addr: u32 = 0x1000;
+    const stack_size: u32 = 256 * 1024; // 256KB
 
     // expected offsets
     const expected_ram_end = base_addr + ram_buffer.len;

@@ -19,24 +19,24 @@ const std = @import("std");
 //            |-------------------------| High Addresses
 // total_size |      (End of RAM)       |
 //            +-------------------------+
-pub const RAM_BASE: usize = 0x00000000;
+pub const RAM_BASE: u32 = 0x00000000;
 
 pub const RAM = struct {
     buffer: []u8, // entire usable RAM
 
     // GLOBAL LAYOUT
-    ram_base: usize,
-    ram_end: usize, // ram_base + buffer.len
+    ram_base: u32,
+    ram_end: u32, // ram_base + buffer.len
 
     // STACK
-    stack_top: usize, // initial SP value
-    stack_limit: usize, // lowest valid stack address
+    stack_top: u32, // initial SP value
+    stack_limit: u32, // lowest valid stack address
 
     // HEAP
-    heap_start: usize,
-    // NOTE: heap_current_break: usize, // Current top of allocated heap data
+    heap_start: u32,
+    // NOTE: heap_current_break: u32, // Current top of allocated heap data
 
-    pub fn init(buffer: []u8, stack_allocation_size: usize) !RAM {
+    pub fn init(buffer: []u8, stack_allocation_size: u32) !RAM {
         if (buffer.len == 0 or stack_allocation_size == 0 or stack_allocation_size > buffer.len) {
             return error.InvalidMemoryConfiguration;
         }
@@ -53,7 +53,7 @@ pub const RAM = struct {
         };
     }
 
-    pub fn setHeapStart(self: *RAM, end_of_bss: usize) !void {
+    pub fn setHeapStart(self: *RAM, end_of_bss: u32) !void {
         if (end_of_bss < self.ram_base or end_of_bss >= self.stack_limit) {
             return error.InvalidHeapStart;
         }

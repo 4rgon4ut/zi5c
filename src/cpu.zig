@@ -3,7 +3,7 @@ const std = @import("std");
 const abi = @import("abi_regs.zig");
 
 pub const CPU = struct {
-    pc: usize,
+    pc: u32,
     regs: [32]u32,
 
     pub fn init() CPU {
