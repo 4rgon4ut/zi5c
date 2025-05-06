@@ -1,6 +1,7 @@
 const std = @import("std");
 
 const abi = @import("abi_regs.zig");
+const RAM = @import("ram.zig").RAM;
 
 pub const CPU = struct {
     pc: u32,
@@ -53,5 +54,11 @@ pub const CPU = struct {
     // --------------------------------------------
     //            FETCH, DECODE, EXECUTE
     // --------------------------------------------
+    pub fn fetch(self: *CPU, ram: *const RAM) !u32 {
+        return try ram.readWord(self.pc);
+    }
 
+    // pub fn decode(self: *CPU, instruction: u32) !void {
+
+    // }
 };
