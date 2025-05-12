@@ -40,8 +40,8 @@ pub const RAM = struct {
         if (buffer.len == 0 or stack_allocation_size == 0 or stack_allocation_size > buffer.len) {
             return error.InvalidMemoryConfiguration;
         }
-
-        const effective_ram_end = RAM_BASE + buffer.len;
+        const buffer_len_u32: u32 = @intCast(buffer.len);
+        const effective_ram_end: u32 = RAM_BASE + buffer_len_u32;
 
         return RAM{
             .buffer = buffer,

@@ -106,7 +106,7 @@ pub const Decoder = struct {
                 ) };
             },
             else => {
-                std.log.warn("Decoder: Unknown opcode: 0b{b:0>7} (0x{x:02X}) in instruction 0x{X:0>8}", .{ opcode, opcode, instruction_bits });
+                std.log.err("Decoder: Unknown opcode: 0b{b:0>7} (0x{x:02X}) in instruction 0x{X:0>8}", .{ opcode, opcode, instruction_bits });
                 return .{ .Illegal = instruction_bits };
             },
         }

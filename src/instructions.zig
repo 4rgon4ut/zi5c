@@ -11,7 +11,7 @@ const DecodedInstruction = union(enum) {
     B: InstructionB,
     U: InstructionU,
     J: InstructionJ,
-    Illegal: u32,
+    Illegal: u32, // TODO: make error type?
 };
 
 const InstructionI = struct {
@@ -142,6 +142,7 @@ const InstructionI = struct {
         };
     }
 
+    // TODO: rename
     pub fn display(self: *InstructionI) void {
         std.debug.print("Instruction: {s}\n", .{self.name});
         std.debug.print("rd: {d}\n", .{self.rd});

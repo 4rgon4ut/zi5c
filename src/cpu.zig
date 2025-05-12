@@ -4,6 +4,9 @@ const rv_consts = @import("encoding_constants.zig");
 const abi = @import("abi_regs.zig");
 const RAM = @import("ram.zig").RAM;
 
+const DecodedInstruction = @import("instructions.zig").DecodedInstruction;
+const decoder = @import("decoder.zig").Decoder;
+
 pub const CPU = struct {
     pc: u32,
     regs: [32]u32,
@@ -59,9 +62,45 @@ pub const CPU = struct {
         return try ram.readWord(self.pc);
     }
 
-    pub fn decode(self: *CPU, instruction: u32) !void {
-        _ = self; // autofix
-        const opcode = @as(rv_consts.Opcode, @truncate(instruction & 0x7F));
-        switch (opcode) {}
+    pub fn decode(instruction: u32) !void {
+        return try decoder.decode(instruction);
+    }
+
+    pub fn execute(self: *CPU, instr: *DecodedInstruction) !void {
+        instr.execute(self);
+    }
+
+    pub fn step(self: *CPU, ram: *const RAM) !void {
+        const start_pc = self.pc;
+
+        const istruction_bits = self.fetch(ram) catch |err| {
+            std.log.err("Error fetching instruction: {}\nStart PC: {X:0>8}", .{ err, start_pc });
+            self.dumpRegs();
+            return err;
+        };
+
+        const decoded_instruction = self.decode(istruction_bits) catch |err| {
+            std.log.err("Error decoding instruction: {}\nStart PC: {X:0>8}", .{ err, start_pc });
+            self.dumpRegs();
+            return err;
+        };
+
+        std.log.debug("Successfully decoded instruction: 0x{X:0>8} -> {s}", .{ istruction_bits, decoded_instruction });
+
+        switch (decoded_instruction) {
+            .Illegal => {
+                std.log.err("Illegal instruction: 0x{X:0>8}\nStart PC: {X:0>8}", .{ istruction_bits, start_pc });
+                self.dumpRegs();
+                return error.IllegalInstruction;
+            },
+            else => {
+                decoded_instruction.display();
+                self.execute(&decoded_instruction) catch |err| {
+                    std.log.err("Error executing instruction: {}\nStart PC: {X:0>8}", .{ err, start_pc });
+                    self.dumpRegs();
+                    return err;
+                };
+            },
+        }
     }
 };
