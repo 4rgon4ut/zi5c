@@ -1,5 +1,6 @@
 const std = @import("std");
 
+const rv_consts = @import("encoding_constants.zig");
 const ops = @import("operations.zig");
 const CPU = @import("cpu.zig").CPU;
 
@@ -21,6 +22,24 @@ const InstructionI = struct {
     imm: i32,
 
     op: ops.I_OP,
+
+    pub fn init(
+        rd: u5,
+        rs1: u5,
+        funct3: u3,
+        imm: i32,
+        opcode: u7,
+    ) !InstructionI {
+        switch (opcode) {}
+
+        return InstructionI{
+            .name = ops.getOpName(opcode, funct3),
+            .rd = rd,
+            .rs1 = rs1,
+            .imm = imm,
+            .op = ops.getOp(opcode, funct3),
+        };
+    }
 
     pub fn display(self: *InstructionI) void {
         std.debug.print("Instruction: {s}\n", .{self.name});

@@ -1,5 +1,6 @@
 const std = @import("std");
 
+const rv_consts = @import("encoding_constants.zig");
 const abi = @import("abi_regs.zig");
 const RAM = @import("ram.zig").RAM;
 
@@ -58,7 +59,9 @@ pub const CPU = struct {
         return try ram.readWord(self.pc);
     }
 
-    // pub fn decode(self: *CPU, instruction: u32) !void {
-
-    // }
+    pub fn decode(self: *CPU, instruction: u32) !void {
+        _ = self; // autofix
+        const opcode = @as(rv_consts.Opcode, @truncate(instruction & 0x7F));
+        switch (opcode) {}
+    }
 };
