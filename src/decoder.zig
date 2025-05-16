@@ -26,13 +26,15 @@ pub const Decoder = struct {
     }
     fn extractImmediateI(instruction: u32) i32 {
         const imm_raw = instruction >> 20;
-        return @as(i32, @bitCast(@as(i12, @truncate(imm_raw))));
+
+        return asI32(imm_raw, 12);
     }
     fn extractImmediateS(instruction: u32) i32 {
         const imm_11_5 = (instruction >> 25) & 0x7F;
         const imm_4_0 = (instruction >> 7) & 0x1F;
         const imm_raw = (imm_11_5 << 5) | imm_4_0;
-        return @as(i32, @bitCast(@as(i12, @truncate(imm_raw))));
+
+        return asI32(imm_raw, 13);
     }
     fn extractImmediateB(instruction: u32) i32 {
         const imm_12 = (instruction >> 31) & 1;
@@ -40,7 +42,8 @@ pub const Decoder = struct {
         const imm_4_1 = (instruction >> 8) & 0xF;
         const imm_11 = (instruction >> 7) & 1;
         const imm_raw = (imm_12 << 12) | (imm_11 << 11) | (imm_10_5 << 5) | (imm_4_1 << 1);
-        return @as(i32, @bitCast(@as(i13, @truncate(imm_raw))));
+
+        return asI32(imm_raw, 13);
     }
     fn extractImmediateU(instruction: u32) i32 {
         return @as(i32, @bitCast(instruction & 0xFFFFF000));
@@ -50,8 +53,22 @@ pub const Decoder = struct {
         const imm_10_1 = (instruction >> 21) & 0x3FF;
         const imm_11 = (instruction >> 20) & 1;
         const imm_19_12 = (instruction >> 12) & 0xFF;
+
         const imm_raw = (imm_20 << 20) | (imm_19_12 << 12) | (imm_11 << 11) | (imm_10_1 << 1);
-        return @as(i32, @bitCast(@as(i21, @truncate(imm_raw))));
+
+        return asI32(imm_raw, 21);
+    }
+
+    fn asI32(imm_raw: u32, comptime original_bit_width: comptime_int) i32 {
+        comptime std.debug.assert(original_bit_width > 0 and original_bit_width <= 32);
+        // types
+        const UnsignedN = std.meta.Int(.unsigned, original_bit_width);
+        const SignedN = std.meta.Int(.signed, original_bit_width);
+
+        const imm_unsigned_n = @as(UnsignedN, @truncate(imm_raw));
+        const imm_signed_n = @as(SignedN, @bitCast(imm_unsigned_n));
+
+        return @as(i32, imm_signed_n);
     }
 
     pub fn decode(instruction_bits: u32) !instr.DecodedInstruction {
@@ -60,13 +77,14 @@ pub const Decoder = struct {
         switch (opcode) {
             rv_consts.OPCODE_LUI, rv_consts.OPCODE_AUIPC => {
                 return .{ .U = try instr.InstructionU.init(
+                    opcode,
                     Decoder.extractRd(instruction_bits),
                     Decoder.extractImmediateU(instruction_bits),
-                    opcode,
                 ) };
             },
             rv_consts.OPCODE_JAL => {
                 return .{ .J = try instr.InstructionJ.init(
+                    opcode,
                     Decoder.extractRd(instruction_bits),
                     Decoder.extractImmediateJ(instruction_bits),
                 ) };
@@ -82,6 +100,7 @@ pub const Decoder = struct {
             },
             rv_consts.OPCODE_BRANCH => {
                 return .{ .B = try instr.InstructionB.init(
+                    opcode,
                     Decoder.extractRs1(instruction_bits),
                     Decoder.extractRs2(instruction_bits),
                     Decoder.extractFunct3(instruction_bits),
@@ -90,6 +109,7 @@ pub const Decoder = struct {
             },
             rv_consts.OPCODE_STORE => {
                 return .{ .S = try instr.InstructionS.init(
+                    opcode,
                     Decoder.extractRs1(instruction_bits),
                     Decoder.extractRs2(instruction_bits),
                     Decoder.extractFunct3(instruction_bits),
@@ -98,6 +118,7 @@ pub const Decoder = struct {
             },
             rv_consts.OPCODE_OP => {
                 return .{ .R = try instr.InstructionR.init(
+                    opcode,
                     Decoder.extractRd(instruction_bits),
                     Decoder.extractRs1(instruction_bits),
                     Decoder.extractRs2(instruction_bits),
@@ -106,7 +127,7 @@ pub const Decoder = struct {
                 ) };
             },
             else => {
-                std.log.err("Decoder: Unknown opcode: 0b{b:0>7} (0x{x:02X}) in instruction 0x{X:0>8}", .{ opcode, opcode, instruction_bits });
+                // std.log.err("Decoder: Unknown opcode: 0b{b:0>7} (0x{x:02X}) in instruction 0x{X:0>8}", .{ opcode, opcode, instruction_bits });
                 return .{ .Illegal = instruction_bits };
             },
         }

@@ -114,6 +114,5 @@ pub fn getAbiName(reg_idx: RegNum) []const u8 {
         REG_T4 => "t4",
         REG_T5 => "t5",
         REG_T6 => "t6",
-        else => "inv", // Invalid or unexpected register index
     };
 }

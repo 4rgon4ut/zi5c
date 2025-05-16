@@ -1,11 +1,11 @@
 const std = @import("std");
 const CPU = @import("cpu.zig").CPU;
 
-const I_OP = fn (
+pub const I_OP = *const fn (
     cpu: *CPU,
-    rs1: u32,
-    rd: u32,
-    imm: u32,
+    rs1: u5,
+    rd: u5,
+    imm: i32,
 ) anyerror!void;
 
 // --- I-Type Execution Functions ---
@@ -65,7 +65,7 @@ pub fn ANDI(cpu: *CPU, rd: u5, rs1: u5, imm: i32) !void {
 /// Note: shamt is the lower 5 bits of imm.
 pub fn SLLI(cpu: *CPU, rd: u5, rs1: u5, imm: i32) !void {
     const val = cpu.readReg(rs1);
-    const shamt = @as(u5, @truncate(imm)); // shamt is the lower 5 bits of imm
+    const shamt = @as(u5, @intCast(imm & 0x1F)); // lower 5 bits
     cpu.writeReg(rd, val << shamt);
     cpu.pc +%= 4;
 }
@@ -74,7 +74,7 @@ pub fn SLLI(cpu: *CPU, rd: u5, rs1: u5, imm: i32) !void {
 /// Note: shamt is the lower 5 bits of imm. Requires funct7 check in dispatcher.
 pub fn SRLI(cpu: *CPU, rd: u5, rs1: u5, imm: i32) !void {
     const val = cpu.readReg(rs1);
-    const shamt = @as(u5, @truncate(imm));
+    const shamt = @as(u5, @intCast(imm & 0x1F));
     cpu.writeReg(rd, val >> shamt);
     cpu.pc +%= 4;
 }
@@ -83,7 +83,7 @@ pub fn SRLI(cpu: *CPU, rd: u5, rs1: u5, imm: i32) !void {
 /// Note: shamt is the lower 5 bits of imm. Requires funct7 check in dispatcher.
 pub fn SRAI(cpu: *CPU, rd: u5, rs1: u5, imm: i32) !void {
     const val = cpu.readReg(rs1);
-    const shamt = @as(u5, @truncate(imm));
+    const shamt = @as(u5, @intCast(imm & 0x1F));
     cpu.writeReg(rd, @as(u32, @bitCast(@as(i32, @bitCast(val)) >> shamt)));
     cpu.pc +%= 4;
 }
@@ -96,7 +96,10 @@ pub fn LB(cpu: *CPU, rd: u5, rs1: u5, imm: i32) !void {
     const offset = @as(u32, @bitCast(imm));
     const mem_addr = base_addr +% offset;
     const byte_val = try cpu.ram.readByte(mem_addr);
-    const result = @as(u32, @bitCast(@as(i8, @bitCast(byte_val))));
+
+    const signed_byte = @as(i8, @bitCast(byte_val)); // Reinterpret u8 bits as i8
+    const result = @as(u32, @bitCast(@as(i32, signed_byte))); // Sign-extend i8 to i32, then bitcast to u32
+
     cpu.writeReg(rd, result);
     cpu.pc +%= 4;
 }
@@ -107,7 +110,10 @@ pub fn LH(cpu: *CPU, rd: u5, rs1: u5, imm: i32) !void {
     const offset = @as(u32, @bitCast(imm));
     const mem_addr = base_addr +% offset;
     const half_val = try cpu.ram.readHalfWord(mem_addr);
-    const result = @as(u32, @bitCast(@as(i16, @bitCast(half_val))));
+
+    const signed_half = @as(i16, @bitCast(half_val)); // Reinterpret u16 bits as i16
+    const result = @as(u32, @bitCast(@as(i32, signed_half))); // Sign-extend i16 to i32, then bitcast to u32
+
     cpu.writeReg(rd, result);
     cpu.pc +%= 4;
 }
@@ -156,7 +162,7 @@ pub fn JALR(cpu: *CPU, rd: u5, rs1: u5, imm: i32) !void {
     cpu.pc = target_addr;
 }
 
-const R_OP = fn (
+pub const R_OP = *const fn (
     cpu: *CPU,
     rd: u5,
     rs1: u5,
@@ -169,7 +175,7 @@ const R_OP = fn (
 pub fn ADD(cpu: *CPU, rd: u5, rs1: u5, rs2: u5) !void {
     const val_rs1 = cpu.readReg(rs1);
     const val_rs2 = cpu.readReg(rs2);
-    cpu.writeReg(rd, val_rs1 +% val_rs2); // Wrapping add
+    cpu.writeReg(rd, val_rs1 +% val_rs2);
     cpu.pc +%= 4;
 }
 
@@ -251,7 +257,7 @@ pub fn AND(cpu: *CPU, rd: u5, rs1: u5, rs2: u5) !void {
 
 // --- S-Type Execution Functions (Opcode 0x23) ---
 
-const S_OP = fn (cpu: *CPU, rs1: u5, rs2: u5, imm: i32) anyerror!void;
+pub const S_OP = *const fn (cpu: *CPU, rs1: u5, rs2: u5, imm: i32) anyerror!void;
 
 /// Executes SB (Store Byte) instruction: memory[rs1 + offset] = rs2[7:0]
 pub fn SB(cpu: *CPU, rs1: u5, rs2: u5, imm: i32) !void {
@@ -285,7 +291,7 @@ pub fn SW(cpu: *CPU, rs1: u5, rs2: u5, imm: i32) !void {
 
 // --- B-Type Execution Functions (Opcode 0x63) ---
 
-const B_OP = fn (cpu: *CPU, rs1: u5, rs2: u5, imm: i32) anyerror!void;
+pub const B_OP = *const fn (cpu: *CPU, rs1: u5, rs2: u5, imm: i32) anyerror!void;
 
 /// Executes BEQ (Branch if Equal) instruction: if (rs1 == rs2) pc += offset
 pub fn BEQ(cpu: *CPU, rs1: u5, rs2: u5, imm: i32) !void {
@@ -361,7 +367,7 @@ pub fn BGEU(cpu: *CPU, rs1: u5, rs2: u5, imm: i32) !void {
 
 // --- U-Type Execution Functions (Opcodes 0x37, 0x17) ---
 
-const U_OP = fn (cpu: *CPU, rd: u5, imm: i32) anyerror!void;
+pub const U_OP = *const fn (cpu: *CPU, rd: u5, imm: i32) anyerror!void;
 
 /// Executes LUI (Load Upper Immediate) instruction: rd = imm << 12
 pub fn LUI(cpu: *CPU, rd: u5, imm: i32) !void {
@@ -382,7 +388,7 @@ pub fn AUIPC(cpu: *CPU, rd: u5, imm: i32) !void {
 
 // --- J-Type Execution Functions (Opcode 0x6F) ---
 
-const J_OP = fn (cpu: *CPU, rd: u5, imm: i32) anyerror!void;
+pub const J_OP = *const fn (cpu: *CPU, rd: u5, imm: i32) anyerror!void;
 
 /// Executes JAL (Jump and Link) instruction: rd = pc + 4; pc += offset
 pub fn JAL(cpu: *CPU, rd: u5, imm: i32) !void {

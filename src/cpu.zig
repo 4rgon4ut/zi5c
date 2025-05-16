@@ -10,11 +10,13 @@ const decoder = @import("decoder.zig").Decoder;
 pub const CPU = struct {
     pc: u32,
     regs: [32]u32,
+    ram: *RAM,
 
-    pub fn init() CPU {
+    pub fn init(ram: *RAM) CPU {
         return CPU{
             .pc = 0,
             .regs = [_]u32{0} ** 32,
+            .ram = ram,
         };
     }
 
@@ -41,17 +43,17 @@ pub const CPU = struct {
         std.debug.print("-------------------- GPRs (x0-x31) ---------------------\n", .{});
 
         std.debug.print("ABI_NAME (xNN): 0xVALUE\n\n", .{});
-        for (abi.REG_LIST) |reg| {
-            const reg_name = abi.getAbiName(reg);
-            const reg_val = self.readReg(reg);
-            std.debug.print("{s:<5} (x{02}): 0x{X:0>8}", .{ reg_name, reg, reg_val });
-            if (reg % 4 == 0) {
+        for (self.regs, 0..) |reg, i| {
+            const reg_name = abi.getAbiName(abi.REG_LIST[i]);
+
+            std.debug.print("{s:<5} (x{any}): 0x{any}", .{ reg_name, i, reg });
+            if (i % 4 == 0) {
                 std.debug.print("\n", .{});
             } else {
                 std.debug.print("    ", .{});
             }
         }
-
+        std.debug.print("\n", .{});
         std.debug.print("--------------------- End Dump -------------------------\n", .{});
     }
 
@@ -66,41 +68,67 @@ pub const CPU = struct {
         return try decoder.decode(instruction);
     }
 
-    pub fn execute(self: *CPU, instr: *DecodedInstruction) !void {
-        instr.execute(self);
-    }
-
-    pub fn step(self: *CPU, ram: *const RAM) !void {
-        const start_pc = self.pc;
-
-        const istruction_bits = self.fetch(ram) catch |err| {
-            std.log.err("Error fetching instruction: {}\nStart PC: {X:0>8}", .{ err, start_pc });
-            self.dumpRegs();
-            return err;
-        };
-
-        const decoded_instruction = self.decode(istruction_bits) catch |err| {
-            std.log.err("Error decoding instruction: {}\nStart PC: {X:0>8}", .{ err, start_pc });
-            self.dumpRegs();
-            return err;
-        };
-
-        std.log.debug("Successfully decoded instruction: 0x{X:0>8} -> {s}", .{ istruction_bits, decoded_instruction });
-
-        switch (decoded_instruction) {
-            .Illegal => {
-                std.log.err("Illegal instruction: 0x{X:0>8}\nStart PC: {X:0>8}", .{ istruction_bits, start_pc });
-                self.dumpRegs();
-                return error.IllegalInstruction;
-            },
-            else => {
-                decoded_instruction.display();
-                self.execute(&decoded_instruction) catch |err| {
-                    std.log.err("Error executing instruction: {}\nStart PC: {X:0>8}", .{ err, start_pc });
-                    self.dumpRegs();
+    pub fn execute(self: *CPU, instr: DecodedInstruction) !void {
+        switch (instr) {
+            .I => |i| {
+                i.execute(self) catch |err| {
+                    // std.log.err("Error executing instruction: {}\nStart PC: {X:0>8}", .{ err, start_pc });
                     return err;
                 };
             },
+            .R => |i| {
+                i.execute(self) catch |err| {
+                    // std.log.err("Error executing instruction: {}\nStart PC: {X:0>8}", .{ err, start_pc });
+                    return err;
+                };
+            },
+            .S => |i| {
+                i.execute(self) catch |err| {
+                    // std.log.err("Error executing instruction: {}\nStart PC: {X:0>8}", .{ err, start_pc });
+                    return err;
+                };
+            },
+            .B => |i| {
+                i.execute(self) catch |err| {
+                    // std.log.err("Error executing instruction: {}\nStart PC: {X:0>8}", .{ err, start_pc });
+                    return err;
+                };
+            },
+            .U => |i| {
+                i.execute(self) catch |err| {
+                    // std.log.err("Error executing instruction: {}\nStart PC: {X:0>8}", .{ err, start_pc });
+                    return err;
+                };
+            },
+            .J => |i| {
+                i.execute(self) catch |err| {
+                    // std.log.err("Error executing instruction: {}\nStart PC: {X:0>8}", .{ err, start_pc });
+                    return err;
+                };
+            },
+            else => {
+                // std.log.err("Illegal instruction: {any}\nStart PC: {X:0>8}", .{ instr, start_pc });
+                return error.IllegalInstruction;
+            }, //FIXME:
         }
+    }
+
+    pub fn step(self: *CPU, ram: *const RAM) !void {
+        const istruction_bits = self.fetch(ram) catch |err| {
+            // std.log.err("Error fetching instruction: {}\nStart PC: {X:0>8}", .{ err, start_pc });
+            return err;
+        };
+
+        const decoded_instruction = decoder.decode(istruction_bits) catch |err| {
+            // std.log.err("Error decoding instruction: {}\nStart PC: {X:0>8}", .{ err, start_pc });
+            return err;
+        };
+
+        //std.log.debug("Successfully decoded instruction: 0x{X:0>8} -> {s}", .{ istruction_bits, decoded_instruction });
+
+        self.execute(decoded_instruction) catch |err| {
+            // std.log.err("Error executing instruction: {}\nStart PC: {X:0>8}", .{ err, start_pc });
+            return err;
+        };
     }
 };

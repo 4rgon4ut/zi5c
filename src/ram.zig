@@ -92,7 +92,7 @@ pub const RAM = struct {
         std.debug.print("--- End of Summary ---\n", .{});
     }
 
-    fn validateAccess(self: *RAM, addr: u32, size: u32) !void {
+    fn validateAccess(self: *const RAM, addr: u32, size: u32) !void {
         if (size == 0) {
             return error.InvalidAccessSize;
         }
@@ -128,27 +128,35 @@ pub const RAM = struct {
         try self.validateAccess(addr, 2);
 
         const buff_idx = @as(usize, addr);
-        return std.mem.readInt(u16, self.buffer[buff_idx .. buff_idx + 2], .little); // RISC-V is typically little-endian
+        const ptr: *const [2]u8 = @ptrCast(&self.buffer[buff_idx]);
+
+        return std.mem.readInt(u16, ptr, .little);
     }
 
     pub fn writeHalfWord(self: *RAM, addr: u32, value: u16) !void {
         try self.validateAccess(addr, 2);
 
         const buff_idx = @as(usize, addr);
-        std.mem.writeInt(u16, self.buffer[buff_idx .. buff_idx + 2], value, .little);
+        const ptr: *[2]u8 = @ptrCast(&self.buffer[buff_idx]);
+
+        std.mem.writeInt(u16, ptr, value, .little);
     }
 
     pub fn readWord(self: *const RAM, addr: u32) !u32 {
         try self.validateAccess(addr, 4);
 
         const buff_idx = @as(usize, addr);
-        return std.mem.readInt(u32, self.buffer[buff_idx .. buff_idx + 4], .little); // RISC-V is typically little-endian
+        const ptr: *const [4]u8 = @ptrCast(&self.buffer[buff_idx]);
+
+        return std.mem.readInt(u32, ptr, .little); // RISC-V is typically little-endian
     }
 
     pub fn writeWord(self: *RAM, addr: u32, value: u32) !void {
         try self.validateAccess(addr, 4);
 
         const buff_idx = @as(usize, addr);
-        std.mem.writeInt(u32, self.buffer[buff_idx .. buff_idx + 4], value, .little);
+        const ptr: *[4]u8 = @ptrCast(&self.buffer[buff_idx]);
+
+        std.mem.writeInt(u32, ptr, value, .little);
     }
 };

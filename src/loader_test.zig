@@ -16,7 +16,7 @@ test "loadELF function test" {
 
     // 2. Execute the function under test
     // Make sure "test_executable.elf" exists in the CWD when running tests
-    try loadELF(&ram, "./test_executable.elf");
+    try loadELF(&ram, "./test_loader.elf");
 
     // 3. Verify the results
     // Define expected byte patterns based on test.S and test.ld

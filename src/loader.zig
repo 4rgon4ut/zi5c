@@ -7,7 +7,12 @@ const mem = std.mem;
 const RAM = @import("ram.zig").RAM;
 const RAM_BASE = @import("ram.zig").RAM_BASE;
 
-pub fn loadELF(ram: *RAM, path: []const u8) !void {
+const LoadResult = struct {
+    entry_point: u32,
+    heap_start: u32,
+};
+
+pub fn loadELF(ram: *RAM, path: []const u8) !LoadResult {
     var file = try fs.cwd().openFile(path, .{ .mode = .read_only });
     defer file.close();
 
@@ -138,14 +143,10 @@ pub fn loadELF(ram: *RAM, path: []const u8) !void {
 
     std.log.info("Finished processing all program headers.", .{});
 
-    // Heap starts immediately after the last loaded byte (including BSS)
-    try ram.setHeapStart(highest_addr_used);
-    std.log.info("Setting Heap Start address to: 0x{x}", .{ram.heap_start});
+    const entry: u32 = @intCast(header.entry);
 
-    if (ram.heap_start > ram.stack_limit) {
-        std.log.err("Calculated heap start 0x{x} conflicts with stack limit 0x{x}", .{ ram.heap_start, ram.stack_limit });
-        return error.MemoryLayoutConflict;
-    }
-
-    std.log.info("ELF loading complete. Entry Point: 0x{x}", .{header.entry});
+    return LoadResult{
+        .entry_point = entry,
+        .heap_start = highest_addr_used,
+    };
 }

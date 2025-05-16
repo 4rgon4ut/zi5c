@@ -23,9 +23,12 @@ SECTIONS
     . = ALIGN(4);
   } > RAM
 
-  /* Note: We don't explicitly handle .bss here for simplicity, */
-  /* loadELF usually only copies .text and .data based on program headers */
-  /* We'll assume loadELF doesn't need to zero .bss itself */
+  .bss :
+  {
+    *(.bss .bss.*)
+    *(COMMON)
+    . = ALIGN(4);
+  } > RAM
 
   /DISCARD/ : { *(.comment) *(.eh_frame*) } /* Discard unnecessary sections */
 }
