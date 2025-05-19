@@ -1,8 +1,9 @@
 const std = @import("std");
 const testing = std.testing;
 
-const RAM = @import("../ram.zig").RAM;
-const loadELF = @import("../loader.zig").loadELF;
+const zi5c = @import("zi5c");
+
+const getFixturePath = @import("testing_all.zig").getFixturePath;
 
 test "loadELF function test" {
 
@@ -13,11 +14,11 @@ test "loadELF function test" {
     // Initialize RAM to a known state (e.g., zeros) to ensure loading works correctly
     @memset(&test_ram_buffer, 0x00);
 
-    var ram = try RAM.init(&test_ram_buffer, stack_size);
+    var ram = try zi5c.RAM.init(&test_ram_buffer, stack_size);
 
-    // 2. Execute the function under test
-    // Make sure "test_executable.elf" exists in the CWD when running tests
-    try loadELF(&ram, ".fixtures/elf/test_loader.elf");
+    const loadResult = try zi5c.loader.loadELF(&ram, "tests/fixtures/elf/test_loader.elf");
+
+    try ram.setHeapStart(loadResult.heap_start);
 
     // 3. Verify the results
     // Define expected byte patterns based on test.S and test.ld
@@ -60,5 +61,4 @@ test "loadELF function test" {
     // const expected_heap_start = (data_offset_in_ram + expected_data_bytes.len + ram.ram_base);
     // try testing.expectEqual(expected_heap_start, ram.heap_start);
 
-    ram.printLayout();
 }

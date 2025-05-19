@@ -38,7 +38,7 @@ pub fn build(b: *std.Build) void {
     // Modules can depend on one another using the `std.Build.Module.addImport` function.
     // This is what allows Zig source code to use `@import("foo")` where 'foo' is not a
     // file path. In this case, we set up `exe_mod` to import `lib_mod`.
-    exe_mod.addImport("zi5k", zi5c_core_mod);
+    exe_mod.addImport("zi5k", zi5c_core_mod); // Note: You're importing "zi5c_core_mod" as "zi5k" here.
 
     const exe = b.addExecutable(.{
         .name = "zi5k", // Your executable's output name (was "zi5c" in your original for exe name)
@@ -67,10 +67,26 @@ pub fn build(b: *std.Build) void {
         // .link_libc = true, // Uncomment if your tests need libc
     });
 
-    all_tests_runner.addImport("zi5c", zi5c_core_mod);
+    // Corrected line: Call addImport on the root_module of the test runner
+    all_tests_runner.root_module.addImport("zi5c", zi5c_core_mod);
 
     const run_all_tests_cmd = b.addRunArtifact(all_tests_runner);
+    run_all_tests_cmd.cwd = b.path(".");
 
+    const install_test_fixtures_step = b.addInstallDirectory(.{
+        .source_dir = b.path("tests/fixtures"),
+        // .install_dir = .prefix means it installs relative to the top-level
+        // build output directory (e.g., "zig-out/").
+        .install_dir = .prefix,
+        .install_subdir = "fixtures", // This creates the "fixtures" subdirectory.
+    });
+
+    // ... (definition of run_all_tests_cmd.cwd = b.path(".")) should remain if you
+    // want tests to primarily access fixtures from their source location.
+
+    // Modify the main "test" step to depend on the fixtures being installed.
+    // This ensures the copy happens when 'zig build test' is run.
     const test_step = b.step("test", "Run all unit and integration tests");
+    test_step.dependOn(&install_test_fixtures_step.step); // Fixtures installed first
     test_step.dependOn(&run_all_tests_cmd.step);
 }

@@ -13,7 +13,10 @@ const LoadResult = struct {
 };
 
 pub fn loadELF(ram: *RAM, path: []const u8) !LoadResult {
-    var file = try fs.cwd().openFile(path, .{ .mode = .read_only });
+    var file = fs.cwd().openFile(path, .{ .mode = .read_only }) catch |err| {
+        std.log.err("Failed to open ELF file at path {s}: {any} ", .{ path, err });
+        return error.FileOpenError;
+    };
     defer file.close();
 
     // 1. Use elf.Header.read to parse the header
