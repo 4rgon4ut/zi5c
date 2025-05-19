@@ -1,7 +1,7 @@
 const std = @import("std");
 
 const rv_consts = @import("encoding_constants.zig");
-const ops = @import("operations.zig");
+const ops = @import("ops_logic.zig");
 const CPU = @import("cpu.zig").CPU;
 
 pub const DecodedInstruction = union(enum) {

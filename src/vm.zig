@@ -120,7 +120,7 @@ test "execute Fibonacci(5) program" {
     // 2. Load ELF
     // This test assumes "fibonacci.elf" is compiled and accessible.
     // The loadELF function should populate vm_ram.buffer and return the entry point.
-    const entry_point = loadELF(&vm_ram, "fib_5th.elf") catch |err| {
+    const entry_point = loadELF(&vm_ram, "tests/fixtures/elf/fib_5th.elf") catch |err| {
         // std.log.err("Failed to load fibonacci.elf: {}", .{err});
         // Depending on how loadELF signals errors, you might need to adjust.
         // For a test, we can panic or return the error.

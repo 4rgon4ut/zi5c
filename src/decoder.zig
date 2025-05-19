@@ -3,7 +3,7 @@ const std = @import("std");
 const abi = @import("abi_regs.zig");
 const rv_consts = @import("encoding_constants.zig");
 
-const instr = @import("instructions.zig");
+const instr = @import("instruction_formats.zig");
 
 pub const Decoder = struct {
     fn extractOpcode(instruction: u32) rv_consts.Opcode {

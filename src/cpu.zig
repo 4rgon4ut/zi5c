@@ -4,7 +4,7 @@ const rv_consts = @import("encoding_constants.zig");
 const abi = @import("abi_regs.zig");
 const RAM = @import("ram.zig").RAM;
 
-const DecodedInstruction = @import("instructions.zig").DecodedInstruction;
+const DecodedInstruction = @import("instruction_formats.zig").DecodedInstruction;
 const decoder = @import("decoder.zig").Decoder;
 
 pub const CPU = struct {
