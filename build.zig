@@ -73,20 +73,12 @@ pub fn build(b: *std.Build) void {
     const run_all_tests_cmd = b.addRunArtifact(all_tests_runner);
     run_all_tests_cmd.cwd = b.path(".");
 
-    const install_test_fixtures_step = b.addInstallDirectory(.{
-        .source_dir = b.path("tests/fixtures"),
-        // .install_dir = .prefix means it installs relative to the top-level
-        // build output directory (e.g., "zig-out/").
-        .install_dir = .prefix,
-        .install_subdir = "fixtures", // This creates the "fixtures" subdirectory.
-    });
-
     // ... (definition of run_all_tests_cmd.cwd = b.path(".")) should remain if you
     // want tests to primarily access fixtures from their source location.
 
     // Modify the main "test" step to depend on the fixtures being installed.
     // This ensures the copy happens when 'zig build test' is run.
     const test_step = b.step("test", "Run all unit and integration tests");
-    test_step.dependOn(&install_test_fixtures_step.step); // Fixtures installed first
+
     test_step.dependOn(&run_all_tests_cmd.step);
 }
