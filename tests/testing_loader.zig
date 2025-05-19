@@ -1,9 +1,10 @@
 const std = @import("std");
-const RAM = @import("ram.zig").RAM;
-const loadELF = @import("loader.zig").loadELF;
+const testing = std.testing;
+
+const RAM = @import("../ram.zig").RAM;
+const loadELF = @import("../loader.zig").loadELF;
 
 test "loadELF function test" {
-    const testing = std.testing;
 
     // 1. Setup RAM
     const test_ram_size: u32 = 64 * 1024; // 64K, should be enough for test.elf
@@ -16,7 +17,7 @@ test "loadELF function test" {
 
     // 2. Execute the function under test
     // Make sure "test_executable.elf" exists in the CWD when running tests
-    try loadELF(&ram, "./test_loader.elf");
+    try loadELF(&ram, ".fixtures/elf/test_loader.elf");
 
     // 3. Verify the results
     // Define expected byte patterns based on test.S and test.ld
