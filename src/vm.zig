@@ -5,9 +5,9 @@ const loadELF = @import("loader.zig").loadELF;
 const rv_abi = @import("abi_regs.zig");
 const testing = @import("std").testing;
 
-const VM = struct {
-    cpu: *CPU,
-    ram: *RAM,
+pub const VM = struct {
+    cpu: CPU,
+    ram: RAM,
 
     ram_buffer: []u8,
     allocator: std.mem.Allocator,
@@ -15,16 +15,24 @@ const VM = struct {
     is_halted: bool,
     steps_executed: u64,
 
-    pub fn init(gpa: std.mem.Allocator, ram_size: usize, stack_size: u32) VM {
+    pub fn init(gpa: std.mem.Allocator, ram_size: usize, stack_size: u32) !VM {
         const ram_buf = gpa.alloc(u8, ram_size) catch |err| {
             std.log.err("Failed to allocate RAM buffer (size: {d} bytes): {}", .{ ram_size, err });
             return error.RamAllocationFailed;
         };
         @memset(ram_buf, 0x00);
 
+        var ram = RAM.init(ram_buf, stack_size) catch |err| {
+            std.log.err("Failed to initialize RAM: {}", .{err});
+            gpa.free(ram_buf);
+            return err;
+        };
+
+        const cpu = CPU.init(&ram);
+
         return VM{
-            .ram = try RAM.init(ram_buf, stack_size),
-            .cpu = try CPU.init(),
+            .ram = ram,
+            .cpu = cpu,
 
             .ram_buffer = ram_buf,
             .allocator = gpa,
@@ -35,15 +43,15 @@ const VM = struct {
     }
 
     pub fn deinit(self: *VM) void {
-        self.allocator.free(self.ram_buffer_slice);
+        self.allocator.free(self.ram_buffer);
         self.* = undefined;
     }
 
-    pub fn load(self: *VM, elf_path: []const u8) !void {
-        const loadResult = try loadELF(self.ram, elf_path);
+    pub fn loadProgram(self: *VM, elf_path: []const u8) !void {
+        const loadResult = try loadELF(&self.ram, elf_path);
 
         std.log.info("Setting Heap Start address to: 0x{X:0>8}\n", .{loadResult.heap_start});
-        self.ram.setHeapStart(loadResult.heap_start);
+        try self.ram.setHeapStart(loadResult.heap_start);
 
         self.cpu.pc = loadResult.entry_point;
         self.cpu.writeReg(rv_abi.REG_SP, self.ram.stack_top);
@@ -51,7 +59,7 @@ const VM = struct {
         self.ram.printLayout();
     }
 
-    fn run(self: *VM, max_steps: ?u64) !void {
+    pub fn run(self: *VM, max_steps: ?u64) !void {
         std.debug.print("VM run loop starting...\n", .{});
         while (!self.is_halted) {
             if (max_steps) |limit| {

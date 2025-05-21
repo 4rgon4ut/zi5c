@@ -42,7 +42,7 @@ test "execute Fibonacci(5) program isolated RAM and CPU" {
             break;
         }
 
-        cpu.step(&vm_ram) catch |err| {
+        cpu.step() catch |err| {
             // std.log.err("CPU Error at step {d}, PC=0x{X:0>8}: {}\n", .{ steps_taken, cpu.pc, err });
             cpu.dumpRegs(); // Dump registers on error
             // For this test, we don't expect EcallHalt as ECALLs are ignored.

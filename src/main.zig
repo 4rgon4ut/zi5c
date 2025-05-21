@@ -1,5 +1,17 @@
-//! By convention, main.zig is where your main function lives in the case that
-//! you are building an executable. If you are making a library, the convention
-//! is to delete this file and start with root.zig instead.
+const std = @import("std");
 
-pub fn main() !void {}
+const VM = @import("vm.zig").VM;
+
+pub fn main() !void {
+    var gpa = std.heap.GeneralPurposeAllocator(.{}){};
+    defer _ = gpa.deinit();
+    const allocator = gpa.allocator();
+
+    var vm = try VM.init(allocator, 256 * 1024, 4 * 1024);
+    defer vm.deinit();
+
+    try vm.loadProgram("zi5c/tests/fixtures/elf/rv32i_suite.elf");
+
+    try vm.run(1000); // Run for a maximum of 1000 steps
+
+}

@@ -60,8 +60,8 @@ pub const CPU = struct {
     // --------------------------------------------
     //            FETCH, DECODE, EXECUTE
     // --------------------------------------------
-    pub fn fetch(self: *CPU, ram: *const RAM) !u32 {
-        return try ram.readWord(self.pc);
+    pub fn fetch(self: *CPU) !u32 {
+        return try self.ram.readWord(self.pc);
     }
 
     pub fn decode(instruction: u32) !void {
@@ -113,8 +113,8 @@ pub const CPU = struct {
         }
     }
 
-    pub fn step(self: *CPU, ram: *const RAM) !void {
-        const istruction_bits = self.fetch(ram) catch |err| {
+    pub fn step(self: *CPU) !void {
+        const istruction_bits = self.fetch() catch |err| {
             // std.log.err("Error fetching instruction: {}\nStart PC: {X:0>8}", .{ err, start_pc });
             return err;
         };

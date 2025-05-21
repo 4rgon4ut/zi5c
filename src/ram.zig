@@ -23,8 +23,9 @@ pub const RAM = struct {
         }
         const buffer_len_u32: u32 = @intCast(buffer.len);
         const effective_ram_end: u32 = RAM_BASE + buffer_len_u32;
+        std.debug.print("effective_ram_end: {d}\n", .{effective_ram_end});
 
-        return RAM{
+        const ram = RAM{
             .buffer = buffer,
             .ram_base = RAM_BASE,
             .ram_end = effective_ram_end,
@@ -32,6 +33,8 @@ pub const RAM = struct {
             .stack_limit = effective_ram_end - stack_allocation_size,
             .heap_start = 0,
         };
+        std.debug.print("ram end: {d}; ram base: {d}\n", .{ ram.ram_end, ram.ram_base });
+        return ram;
     }
 
     pub fn setHeapStart(self: *RAM, end_of_bss: u32) !void {
@@ -42,6 +45,7 @@ pub const RAM = struct {
     }
 
     pub fn printLayout(self: *RAM) void {
+        std.debug.print("ram end: {d}; ram base: {d}", .{ self.ram_end, self.ram_base });
         const total_size = self.ram_end - self.ram_base;
         const loaded_size = self.heap_start - self.ram_base;
         const stack_size = self.stack_top - self.stack_limit;

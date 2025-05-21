@@ -1,0 +1,26 @@
+{
+    "version": "0.2.0",
+    "configurations": [
+        {
+            "name": "Debug Zig VM (main.zig)",
+            "type": "cppdbg",
+            "request": "launch",
+            // IMPORTANT: Adjust "program" if your executable name or path is different
+            "program": "${workspaceFolder}/zig-out/bin/zisk", // Or "my_vm_emulator" if that's the name
+            "args": [
+                // Provide example arguments for your main.zig
+                // <elf_path> <ram_size_kb> <stack_size_kb>
+                "tests/fixtures/elfs/fib_5th.elf", // Example ELF path
+                "64",  // Example RAM size in KB
+                "4"    // Example Stack size in KB
+            ],
+            "stopAtEntry": false,
+            "cwd": "${workspaceFolder}",
+            "environment": [],
+            "externalConsole": false,
+            "MIMode": "lldb", // For macOS
+            // "miDebuggerPath": "/usr/bin/lldb", // Optional: if lldb is not in PATH
+            "preLaunchTask": "Zig Build Executable" // Optional: Task to build before launching
+        }
+    ]
+}
