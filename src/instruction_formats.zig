@@ -12,6 +12,33 @@ pub const DecodedInstruction = union(enum) {
     U: InstructionU,
     J: InstructionJ,
     Illegal: u32, // TODO: make error type?
+
+    pub fn execute(self: *const DecodedInstruction, cpu: *CPU) !void {
+        switch (self.*) {
+            .R => |r_payload| try r_payload.execute(cpu),
+            .I => |i_payload| try i_payload.execute(cpu),
+            .S => |s_payload| try s_payload.execute(cpu),
+            .B => |b_payload| try b_payload.execute(cpu),
+            .U => |u_payload| try u_payload.execute(cpu),
+            .J => |j_payload| try j_payload.execute(cpu),
+            .Illegal => |raw_bits| {
+                std.log.err("Attempting to execute illegal instruction (raw: 0x{X:0>8}) from DecodedInstruction.execute", .{raw_bits});
+                return error.IllegalInstruction;
+            },
+        }
+    }
+
+    pub fn display(self: *const DecodedInstruction) void {
+        switch (self.*) {
+            .R => |r_payload| r_payload.display(),
+            .I => |i_payload| i_payload.display(),
+            .S => |s_payload| s_payload.display(),
+            .B => |b_payload| b_payload.display(),
+            .U => |u_payload| u_payload.display(),
+            .J => |j_payload| j_payload.display(),
+            .Illegal => |raw_bits| std.debug.print("Instruction: ILLEGAL (0x{X:0>8})\n", .{raw_bits}),
+        }
+    }
 };
 
 pub const InstructionI = struct {

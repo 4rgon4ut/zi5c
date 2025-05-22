@@ -12,12 +12,16 @@ pub const CPU = struct {
     regs: [32]u32,
     ram: *RAM,
 
-    pub fn init(ram: *RAM) CPU {
-        return CPU{
+    pub fn init(allocator: std.mem.Allocator, ram: *RAM) !*CPU {
+        const cpu = try allocator.create(CPU);
+
+        cpu.* = CPU{
             .pc = 0,
             .regs = [_]u32{0} ** 32,
             .ram = ram,
         };
+
+        return cpu;
     }
 
     // --------------------------------------------
@@ -46,7 +50,7 @@ pub const CPU = struct {
         for (self.regs, 0..) |reg, i| {
             const reg_name = abi.getAbiName(abi.REG_LIST[i]);
 
-            std.debug.print("{s:<5} (x{any}): 0x{any}", .{ reg_name, i, reg });
+            std.debug.print("{s:<5} (x{any}): {any}", .{ reg_name, i, reg });
             if (i % 4 == 0) {
                 std.debug.print("\n", .{});
             } else {
@@ -69,48 +73,19 @@ pub const CPU = struct {
     }
 
     pub fn execute(self: *CPU, instr: DecodedInstruction) !void {
-        switch (instr) {
-            .I => |i| {
-                i.execute(self) catch |err| {
-                    // std.log.err("Error executing instruction: {}\nStart PC: {X:0>8}", .{ err, start_pc });
+        instr.execute(self) catch |err| {
+            switch (err) {
+                error.IllegalInstruction => {
                     return err;
-                };
-            },
-            .R => |i| {
-                i.execute(self) catch |err| {
-                    // std.log.err("Error executing instruction: {}\nStart PC: {X:0>8}", .{ err, start_pc });
+                },
+                else => {
+                    std.debug.print("Error executing instruction:\n", .{});
+                    instr.display();
+                    std.debug.print("Error: {}\n", .{err});
                     return err;
-                };
-            },
-            .S => |i| {
-                i.execute(self) catch |err| {
-                    // std.log.err("Error executing instruction: {}\nStart PC: {X:0>8}", .{ err, start_pc });
-                    return err;
-                };
-            },
-            .B => |i| {
-                i.execute(self) catch |err| {
-                    // std.log.err("Error executing instruction: {}\nStart PC: {X:0>8}", .{ err, start_pc });
-                    return err;
-                };
-            },
-            .U => |i| {
-                i.execute(self) catch |err| {
-                    // std.log.err("Error executing instruction: {}\nStart PC: {X:0>8}", .{ err, start_pc });
-                    return err;
-                };
-            },
-            .J => |i| {
-                i.execute(self) catch |err| {
-                    // std.log.err("Error executing instruction: {}\nStart PC: {X:0>8}", .{ err, start_pc });
-                    return err;
-                };
-            },
-            else => {
-                // std.log.err("Illegal instruction: {any}\nStart PC: {X:0>8}", .{ instr, start_pc });
-                return error.IllegalInstruction;
-            }, //FIXME:
-        }
+                },
+            }
+        };
     }
 
     pub fn step(self: *CPU) !void {

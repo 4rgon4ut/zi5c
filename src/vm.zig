@@ -6,49 +6,41 @@ const rv_abi = @import("abi_regs.zig");
 const testing = @import("std").testing;
 
 pub const VM = struct {
-    cpu: CPU,
-    ram: RAM,
+    cpu: *CPU,
+    ram: *RAM,
 
-    ram_buffer: []u8,
-    allocator: std.mem.Allocator,
+    arena: std.heap.ArenaAllocator,
 
     is_halted: bool,
     steps_executed: u64,
 
-    pub fn init(gpa: std.mem.Allocator, ram_size: usize, stack_size: u32) !VM {
-        const ram_buf = gpa.alloc(u8, ram_size) catch |err| {
-            std.log.err("Failed to allocate RAM buffer (size: {d} bytes): {}", .{ ram_size, err });
-            return error.RamAllocationFailed;
-        };
-        @memset(ram_buf, 0x00);
+    pub fn init(ram_size: usize, stack_size: u32) !VM {
+        var arena = std.heap.ArenaAllocator.init(std.heap.page_allocator);
+        errdefer arena.deinit();
+        const allocator = arena.allocator();
 
-        var ram = RAM.init(ram_buf, stack_size) catch |err| {
+        const ram = RAM.init(allocator, ram_size, stack_size) catch |err| {
             std.log.err("Failed to initialize RAM: {}", .{err});
-            gpa.free(ram_buf);
             return err;
         };
-
-        const cpu = CPU.init(&ram);
+        const cpu = try CPU.init(allocator, ram);
 
         return VM{
-            .ram = ram,
             .cpu = cpu,
-
-            .ram_buffer = ram_buf,
-            .allocator = gpa,
-
+            .ram = ram,
+            .arena = arena,
             .is_halted = false,
             .steps_executed = 0,
         };
     }
 
     pub fn deinit(self: *VM) void {
-        self.allocator.free(self.ram_buffer);
+        self.arena.deinit();
         self.* = undefined;
     }
 
     pub fn loadProgram(self: *VM, elf_path: []const u8) !void {
-        const loadResult = try loadELF(&self.ram, elf_path);
+        const loadResult = try loadELF(self.ram, elf_path);
 
         std.log.info("Setting Heap Start address to: 0x{X:0>8}\n", .{loadResult.heap_start});
         try self.ram.setHeapStart(loadResult.heap_start);

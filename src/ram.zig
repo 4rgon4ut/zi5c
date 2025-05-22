@@ -17,22 +17,32 @@ pub const RAM = struct {
     heap_start: u32,
     // NOTE: heap_current_break: u32, // Current top of allocated heap data
 
-    pub fn init(buffer: []u8, stack_allocation_size: u32) !RAM {
-        if (buffer.len == 0 or stack_allocation_size == 0 or stack_allocation_size > buffer.len) {
+    pub fn init(allocator: std.mem.Allocator, total_size: usize, stack_size: u32) !*RAM {
+        if (total_size == 0 or stack_size == 0 or stack_size > total_size) {
             return error.InvalidMemoryConfiguration;
         }
-        const buffer_len_u32: u32 = @intCast(buffer.len);
+
+        const buffer = allocator.alloc(u8, total_size) catch |err| {
+            std.log.err("Failed to allocate RAM buffer (size: {d} bytes): {}", .{ total_size, err });
+            return error.RamAllocationFailed;
+        };
+        @memset(buffer, 0x00);
+        errdefer allocator.free(buffer);
+
+        const buffer_len_u32: u32 = @intCast(total_size);
         const effective_ram_end: u32 = RAM_BASE + buffer_len_u32;
         std.debug.print("effective_ram_end: {d}\n", .{effective_ram_end});
 
-        const ram = RAM{
+        const ram = try allocator.create(RAM);
+        ram.* = .{
             .buffer = buffer,
             .ram_base = RAM_BASE,
             .ram_end = effective_ram_end,
             .stack_top = effective_ram_end,
-            .stack_limit = effective_ram_end - stack_allocation_size,
+            .stack_limit = effective_ram_end - stack_size,
             .heap_start = 0,
         };
+
         std.debug.print("ram end: {d}; ram base: {d}\n", .{ ram.ram_end, ram.ram_base });
         return ram;
     }
