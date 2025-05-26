@@ -183,7 +183,7 @@ pub const InstructionI = struct {
     }
 
     pub fn execute(self: *const InstructionI, cpu: *CPU) !void {
-        try self.op(cpu, self.rs1, self.rd, self.imm);
+        try self.op(cpu, self.rd, self.rs1, self.imm);
     }
 };
 
@@ -344,6 +344,7 @@ pub const InstructionS = struct {
         std.debug.print("imm: {d}\n", .{self.imm});
     }
     pub fn execute(self: *const InstructionS, cpu: *CPU) !void {
+        // cpu: *CPU, rs1: u5, rs2: u5, imm: i32
         try self.op(cpu, self.rs1, self.rs2, self.imm);
     }
 };
@@ -417,6 +418,7 @@ pub const InstructionB = struct {
     }
 
     pub fn execute(self: *const InstructionB, cpu: *CPU) !void {
+        // cpu: *CPU, rs1: u5, rs2: u5, imm: i32
         try self.op(cpu, self.rs1, self.rs2, self.imm);
     }
 };
@@ -463,6 +465,7 @@ pub const InstructionU = struct {
     }
 
     pub fn execute(self: *const InstructionU, cpu: *CPU) !void {
+        // cpu: *CPU, rd: u5, imm: i32
         try self.op(cpu, self.rd, self.imm);
     }
 };
@@ -505,6 +508,7 @@ pub const InstructionJ = struct {
     }
 
     pub fn execute(self: *const InstructionJ, cpu: *CPU) !void {
+        // cpu: *CPU, rd: u5, imm: i32
         try self.op(cpu, self.rd, self.imm);
     }
 };

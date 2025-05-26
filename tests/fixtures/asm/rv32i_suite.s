@@ -1,8 +1,3 @@
-# rv32i_test_suite.s
-#
-# A collection of RV32I instructions for testing a CPU simulator.
-# After execution, specific registers and memory locations should hold expected values.
-
 .section .data
 # Data for load/store tests
 data_word:      .word   0x12345678
@@ -16,6 +11,7 @@ another_word:   .word   0xAABBCCDD
 .section .text
 .global _start
 
+.align 2  # Ensures _start is on a 4-byte boundary (2^2 = 4 bytes)
 _start:
     # --- Initialization ---
     addi  s0, zero, 10      # s0 = 10

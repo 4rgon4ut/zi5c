@@ -6,6 +6,8 @@ const RAM = @import("ram.zig").RAM;
 
 const DecodedInstruction = @import("instruction_formats.zig").DecodedInstruction;
 const decoder = @import("decoder.zig").Decoder;
+const Tracer = @import("tracer.zig").Tracer;
+const TraceEntry = @import("tracer.zig").TraceEntry;
 
 pub const CPU = struct {
     pc: u32,
@@ -98,8 +100,6 @@ pub const CPU = struct {
             // std.log.err("Error decoding instruction: {}\nStart PC: {X:0>8}", .{ err, start_pc });
             return err;
         };
-
-        //std.log.debug("Successfully decoded instruction: 0x{X:0>8} -> {s}", .{ istruction_bits, decoded_instruction });
 
         self.execute(decoded_instruction) catch |err| {
             // std.log.err("Error executing instruction: {}\nStart PC: {X:0>8}", .{ err, start_pc });

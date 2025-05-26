@@ -3,8 +3,8 @@ const CPU = @import("cpu.zig").CPU;
 
 pub const I_OP = *const fn (
     cpu: *CPU,
-    rs1: u5,
     rd: u5,
+    rs1: u5,
     imm: i32,
 ) anyerror!void;
 
@@ -13,7 +13,7 @@ pub const I_OP = *const fn (
 // --- OP-IMM Instructions (Opcode 0x13) ---
 
 /// Executes ADDI (Add Immediate) instruction: rd = rs1 + sign_extend(imm)
-pub fn ADDI(cpu: *CPU, rs1: u5, rd: u5, imm: i32) !void {
+pub fn ADDI(cpu: *CPU, rd: u5, rs1: u5, imm: i32) !void {
     const val = cpu.readReg(rs1);
     const imm_u32 = @as(u32, @bitCast(imm));
     cpu.writeReg(rd, val +% imm_u32);
@@ -162,14 +162,14 @@ pub fn JALR(cpu: *CPU, rd: u5, rs1: u5, imm: i32) !void {
     cpu.pc = target_addr;
 }
 
+// --- R-Type Execution Functions (Opcode 0x33) ---
+
 pub const R_OP = *const fn (
     cpu: *CPU,
     rd: u5,
     rs1: u5,
     rs2: u5,
 ) anyerror!void;
-
-// --- R-Type Execution Functions (Opcode 0x33) ---
 
 /// Executes ADD instruction: rd = rs1 + rs2
 pub fn ADD(cpu: *CPU, rd: u5, rs1: u5, rs2: u5) !void {

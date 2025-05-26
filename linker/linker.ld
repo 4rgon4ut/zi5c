@@ -1,34 +1,44 @@
-/* test.ld */
-OUTPUT_ARCH( "riscv" )
+OUTPUT_ARCH("riscv")
 ENTRY(_start)
 
 MEMORY
 {
-  /* RAM starts at 0x0, size assumed large enough */
-  RAM (rwx) : ORIGIN = 0x00000000, LENGTH = 64K
+  RAM (rwx) : ORIGIN = 0x0, LENGTH = 0x100000
 }
+
+
+__stack_top_linker = 0x0 + 0x100000;
 
 SECTIONS
 {
   .text :
   {
-    *(.text .text.*)   /* Place all text sections */
-    . = ALIGN(4);      /* Align before data */
-  } > RAM
-
-  .data :
-  {
-    *(.data .data.*)   /* Place all data sections */
-    *(.rodata .rodata.*) /* Place read-only data */
+    *(.text .text.*)
     . = ALIGN(4);
   } > RAM
 
-  .bss :
+  .rodata : ALIGN(4)
+  {
+    *(.rodata .rodata.*)
+     . = ALIGN(4);
+  } > RAM
+
+  .data : ALIGN(4)
+  {
+    *(.data .data.*)
+    . = ALIGN(4);
+  } > RAM
+
+  .bss : ALIGN(4)
   {
     *(.bss .bss.*)
     *(COMMON)
     . = ALIGN(4);
   } > RAM
 
-  /DISCARD/ : { *(.comment) *(.eh_frame*) } /* Discard unnecessary sections */
+
+  _end = .;
+  PROVIDE(heap_start_from_linker = _end);
+
+  /DISCARD/ : { *(.comment) *(.eh_frame*) }
 }
