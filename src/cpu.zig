@@ -6,8 +6,6 @@ const RAM = @import("ram.zig").RAM;
 
 const DecodedInstruction = @import("instruction_formats.zig").DecodedInstruction;
 const decoder = @import("decoder.zig").Decoder;
-const Tracer = @import("tracer.zig").Tracer;
-const TraceEntry = @import("tracer.zig").TraceEntry;
 
 pub const CPU = struct {
     pc: u32,

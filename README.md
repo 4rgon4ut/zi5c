@@ -11,3 +11,7 @@ zig build-exe tests/fixtures/zig/fib_5th.zig \
   --name program.elf \
   -O ReleaseSmall
 ```
+
+- [ ] cli
+- [ ] cleanup
+- [ ] ecalls

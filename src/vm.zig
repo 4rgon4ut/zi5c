@@ -3,7 +3,6 @@ const CPU = @import("cpu.zig").CPU;
 const RAM = @import("ram.zig").RAM;
 const loadELF = @import("loader.zig").loadELF;
 const rv_abi = @import("abi_regs.zig");
-const testing = @import("std").testing;
 
 pub const VM = struct {
     cpu: *CPU,
@@ -57,6 +56,7 @@ pub const VM = struct {
             if (max_steps) |limit| {
                 if (self.steps_executed >= limit) {
                     std.log.warn("VM reached maximum step count ({d}). Halting.", .{limit});
+                    self.cpu.dumpRegs();
                     self.halt();
                     return error.MaxStepsReached;
                 }
