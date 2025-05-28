@@ -1,14 +1,14 @@
 const std = @import("std");
 const CPU = @import("cpu.zig").CPU;
 
+// --- I-Type Execution Functions ---
+
 pub const I_OP = *const fn (
     cpu: *CPU,
     rd: u5,
     rs1: u5,
     imm: i32,
 ) anyerror!void;
-
-// --- I-Type Execution Functions ---
 
 // --- OP-IMM Instructions (Opcode 0x13) ---
 
@@ -150,8 +150,6 @@ pub fn LHU(cpu: *CPU, rd: u5, rs1: u5, imm: i32) !void {
     cpu.pc +%= 4;
 }
 
-// --- JALR Instruction (Opcode 0x67) ---
-
 /// Executes JALR (Jump and Link Register) instruction: rd = pc + 4; pc = (rs1 + imm) & ~1
 pub fn JALR(cpu: *CPU, rd: u5, rs1: u5, imm: i32) !void {
     const val = cpu.readReg(rs1);
@@ -160,6 +158,24 @@ pub fn JALR(cpu: *CPU, rd: u5, rs1: u5, imm: i32) !void {
     const return_addr = cpu.pc +% 4;
     cpu.writeReg(rd, return_addr);
     cpu.pc = target_addr;
+}
+
+// SYSTEM Instructions (Opcode 0x73)
+
+pub fn ECALL(cpu: *CPU, rd: u5, rs1: u5, imm: i32) !void {
+    _ = rd; // autofix
+    _ = rs1; // autofix
+    _ = imm; // autofix
+
+    cpu.pc +%= 4; // Move to next instruction
+}
+
+pub fn EBREAK(cpu: *CPU, rd: u5, rs1: u5, imm: i32) !void {
+    _ = cpu; // autofix
+    _ = rd; // autofix
+    _ = rs1; // autofix
+    _ = imm; // autofix
+
 }
 
 // --- R-Type Execution Functions (Opcode 0x33) ---

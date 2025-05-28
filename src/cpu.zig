@@ -7,6 +7,9 @@ const RAM = @import("ram.zig").RAM;
 const DecodedInstruction = @import("instruction_formats.zig").DecodedInstruction;
 const decoder = @import("decoder.zig").Decoder;
 
+const Trap = @import("traps.zig").Trap;
+const FatalError = @import("traps.zig").FatalError;
+
 pub const CPU = struct {
     pc: u32,
     regs: [32]u32,
@@ -64,11 +67,11 @@ pub const CPU = struct {
     // --------------------------------------------
     //            FETCH, DECODE, EXECUTE
     // --------------------------------------------
-    pub fn fetch(self: *CPU) !u32 {
+    pub fn fetch(self: *CPU) FatalError!u32 {
         return try self.ram.readWord(self.pc);
     }
 
-    pub fn decode(instruction: u32) !void {
+    pub fn decode(instruction: u32) FatalError!void {
         return try decoder.decode(instruction);
     }
 
@@ -88,20 +91,33 @@ pub const CPU = struct {
         };
     }
 
-    pub fn step(self: *CPU) !void {
+    pub fn step(self: *CPU) ?Trap {
         const istruction_bits = self.fetch() catch |err| {
-            // std.log.err("Error fetching instruction: {}\nStart PC: {X:0>8}", .{ err, start_pc });
-            return err;
+            std.log.err(
+                \\Error fetching instruction: {any}
+                \\PC: {X:0>8}
+            , .{ err, self.pc });
+            return Trap{ .Fatal = err };
         };
 
         const decoded_instruction = decoder.decode(istruction_bits) catch |err| {
-            // std.log.err("Error decoding instruction: {}\nStart PC: {X:0>8}", .{ err, start_pc });
-            return err;
+            std.log.err(
+                \\Error decoding instruction: {any}
+                \\PC: 0x{X:0>8}
+                \\Instruction bits: {b:0>32}
+            , .{ err, self.pc, istruction_bits });
+            return Trap{ .Fatal = err };
         };
 
         self.execute(decoded_instruction) catch |err| {
-            // std.log.err("Error executing instruction: {}\nStart PC: {X:0>8}", .{ err, start_pc });
-            return err;
+            std.log.err(
+                \\Error executing instruction: {any}
+                \\PC: 0x{X:0>8}
+                \\Instruction: {any}
+            , .{ err, self.pc, decoded_instruction });
+            decoded_instruction.display();
+            return Trap{ .Fatal = FatalError.Internal };
         };
+        return null;
     }
 };

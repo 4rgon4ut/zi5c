@@ -1,5 +1,8 @@
 const std = @import("std");
 
+const Trap = @import("traps.zig").Trap;
+const FatalError = @import("traps.zig").FatalError;
+
 pub const RAM_BASE: u32 = 0x00000000;
 
 pub const RAM = struct {
@@ -87,39 +90,34 @@ pub const RAM = struct {
         std.debug.print("--- End of Summary ---\n", .{});
     }
 
-    fn validateAccess(self: *const RAM, addr: u32, size: u32) !void {
-        if (size == 0) {
-            return error.InvalidAccessSize;
+    fn validateAccess(self: *const RAM, addr: u32, size: u32) FatalError!void {
+        if ((size == 0) or (size != 1 and size != 2 and size != 4 and size != 8)) {
+            return FatalError.MemoryInvalidAccessSize;
         }
 
-        // TODO: probably check that size is in [1, 2, 4, 8]
-        // (now guaranteed by the provided ram api functions, i.e. writeWord)
         if (size != 1 and addr % size != 0) {
-            return error.InvalidAlignment;
+            return FatalError.MemoryUnalignedAccess;
         }
 
         if (size > (self.ram_end - addr)) {
-            return error.OutOfBounds;
+            return FatalError.MemoryOutOfBounds;
         }
     }
 
-    pub fn readByte(
-        self: *const RAM,
-        addr: u32,
-    ) !u8 {
+    pub fn readByte(self: *const RAM, addr: u32) FatalError!u8 {
         try self.validateAccess(addr, 1);
 
         return self.buffer[addr];
     }
 
-    pub fn writeByte(self: *RAM, addr: u32, value: u8) !void {
+    pub fn writeByte(self: *RAM, addr: u32, value: u8) FatalError!void {
         try self.validateAccess(addr, 1);
 
         const buff_idx = @as(usize, addr);
         self.buffer[buff_idx] = value;
     }
 
-    pub fn readHalfWord(self: *const RAM, addr: u32) !u16 {
+    pub fn readHalfWord(self: *const RAM, addr: u32) FatalError!u16 {
         try self.validateAccess(addr, 2);
 
         const buff_idx = @as(usize, addr);
@@ -128,7 +126,7 @@ pub const RAM = struct {
         return std.mem.readInt(u16, ptr, .little);
     }
 
-    pub fn writeHalfWord(self: *RAM, addr: u32, value: u16) !void {
+    pub fn writeHalfWord(self: *RAM, addr: u32, value: u16) FatalError!void {
         try self.validateAccess(addr, 2);
 
         const buff_idx = @as(usize, addr);
@@ -137,7 +135,7 @@ pub const RAM = struct {
         std.mem.writeInt(u16, ptr, value, .little);
     }
 
-    pub fn readWord(self: *const RAM, addr: u32) !u32 {
+    pub fn readWord(self: *const RAM, addr: u32) FatalError!u32 {
         try self.validateAccess(addr, 4);
 
         const buff_idx = @as(usize, addr);
@@ -146,7 +144,7 @@ pub const RAM = struct {
         return std.mem.readInt(u32, ptr, .little); // RISC-V is typically little-endian
     }
 
-    pub fn writeWord(self: *RAM, addr: u32, value: u32) !void {
+    pub fn writeWord(self: *RAM, addr: u32, value: u32) FatalError!void {
         try self.validateAccess(addr, 4);
 
         const buff_idx = @as(usize, addr);

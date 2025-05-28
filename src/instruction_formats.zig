@@ -4,6 +4,8 @@ const rv_consts = @import("encoding_constants.zig");
 const ops = @import("ops_logic.zig");
 const CPU = @import("cpu.zig").CPU;
 
+const FatalError = @import("traps.zig").FatalError;
+
 pub const DecodedInstruction = union(enum) {
     I: InstructionI,
     R: InstructionR,
@@ -56,7 +58,7 @@ pub const InstructionI = struct {
         rs1: u5,
         funct3: u3,
         imm: i32,
-    ) !InstructionI {
+    ) FatalError!InstructionI {
         var name: []const u8 = "UNDEFINED_I";
         var op: ops.I_OP = undefined;
 
@@ -94,7 +96,7 @@ pub const InstructionI = struct {
                             name = "SLLI";
                         } else {
                             std.log.err("Invalid encoding for SLLI (upper imm bits not zero)", .{});
-                            return error.InvalidInstructionEncoding;
+                            return FatalError.InstructionInvalidEncoding;
                         }
                     },
                     rv_consts.FUNCT3_SRLI_SRAI => {
@@ -108,7 +110,7 @@ pub const InstructionI = struct {
                             name = "SRAI";
                         } else {
                             std.log.err("Invalid encoding for SRLI/SRAI (upper imm bits mismatch)", .{});
-                            return error.InvalidInstructionEncoding;
+                            return FatalError.InstructionInvalidEncoding;
                         }
                     },
                 }
@@ -138,7 +140,7 @@ pub const InstructionI = struct {
 
                     else => {
                         // std.log.err("Invalid funct3 for LOAD instruction: {b}", .{funct3});
-                        return error.InvalidInstructionEncoding;
+                        return FatalError.InstructionInvalidEncoding;
                     },
                 }
             },
@@ -148,20 +150,40 @@ pub const InstructionI = struct {
                     name = "JALR";
                 } else {
                     // std.log.err("Invalid funct3 for JALR: {b}", .{funct3});
-                    return error.InvalidInstructionEncoding;
+                    return FatalError.InstructionInvalidEncoding;
                 }
             },
             rv_consts.OPCODE_SYSTEM => {
-                // TODO: Implement SYSTEM instructions
-                @panic("System instructions not implemented");
+                switch (funct3) {
+                    rv_consts.FUNCT3_PRIV => {
+                        switch (imm) {
+                            0 => {
+                                op = &ops.ECALL;
+                                name = "ECALL";
+                            },
+                            1 => {
+                                op = &ops.EBREAK;
+                                name = "EBREAK";
+                            },
+                            else => {
+                                std.log.err("Unsupported SYSTEM/PRIV instruction (imm={d})", .{imm});
+                                return FatalError.InstructionUnsupported;
+                            },
+                        }
+                    },
+                    else => {
+                        std.log.err("Unsupported funct3 for SYSTEM instruction: {b}", .{funct3});
+                        return FatalError.InstructionUnsupported;
+                    },
+                }
             },
             rv_consts.OPCODE_MISC_MEM => {
                 // TODO: Implement MISC_MEM instructions
-                @panic("MISC_MEM instructions not implemented");
+                return FatalError.InstructionUnsupported;
             },
             else => {
                 // std.log.err("Invalid/Unexpected opcode (0x{x:02X}) passed to InstructionI.init", .{opcode});
-                return error.UnexpectedInstruction;
+                return FatalError.InstructionUnsupported;
             },
         }
 
@@ -203,7 +225,7 @@ pub const InstructionR = struct {
         rs2: u5,
         funct3: u3,
         funct7: u7,
-    ) !InstructionR {
+    ) FatalError!InstructionR {
         var name: []const u8 = "UNDEFINED_R";
         var op: ops.R_OP = undefined;
 
@@ -222,7 +244,7 @@ pub const InstructionR = struct {
                             },
                             else => {
                                 // std.log.err("Invalid funct7 for ADD/SUB: {b}", .{funct7});
-                                return error.InvalidInstructionEncoding;
+                                return FatalError.InstructionInvalidEncoding;
                             },
                         }
                     },
@@ -263,7 +285,7 @@ pub const InstructionR = struct {
             },
             else => {
                 // std.log.err("Invalid/Unexpected opcode (0x{x:02X}) passed to InstructionR.init", .{opcode});
-                return error.UnexpectedInstruction;
+                return FatalError.InstructionUnexpectedOpcode;
             },
         }
 
@@ -297,7 +319,7 @@ pub const InstructionS = struct {
 
     op: ops.S_OP,
 
-    pub fn init(opcode: u7, rs1: u5, rs2: u5, funct3: u3, imm: i32) !InstructionS {
+    pub fn init(opcode: u7, rs1: u5, rs2: u5, funct3: u3, imm: i32) FatalError!InstructionS {
         var name: []const u8 = "UNDEFINED_S";
         var op: ops.S_OP = undefined;
 
@@ -318,13 +340,13 @@ pub const InstructionS = struct {
                     },
                     else => {
                         // std.log.err("Invalid funct3 for S-type instruction: {b}", .{funct3});
-                        return error.InvalidInstructionEncoding;
+                        return FatalError.InstructionInvalidEncoding;
                     },
                 }
             },
             else => {
                 // std.log.err("Invalid/Unexpected opcode (0x{x:02X}) passed to InstructionS.init", .{opcode});
-                return error.UnexpectedInstruction;
+                return FatalError.InstructionUnexpectedOpcode;
             },
         }
 
@@ -358,7 +380,7 @@ pub const InstructionB = struct {
 
     op: ops.B_OP,
 
-    pub fn init(opcode: u7, rs1: u5, rs2: u5, funct3: u3, imm: i32) !InstructionB {
+    pub fn init(opcode: u7, rs1: u5, rs2: u5, funct3: u3, imm: i32) FatalError!InstructionB {
         var name: []const u8 = "UNDEFINED_B";
         var op: ops.B_OP = undefined;
 
@@ -391,13 +413,13 @@ pub const InstructionB = struct {
                     },
                     else => {
                         // std.log.err("Invalid funct3 for B-type instruction: {b}", .{funct3});
-                        return error.InvalidInstructionEncoding;
+                        return FatalError.InstructionInvalidEncoding;
                     },
                 }
             },
             else => {
                 // std.log.err("Invalid/Unexpected opcode (0x{x:02X}) passed to InstructionB.init", .{opcode});
-                return error.UnexpectedInstruction;
+                return FatalError.InstructionUnexpectedOpcode;
             },
         }
 
@@ -431,7 +453,7 @@ pub const InstructionU = struct {
 
     op: ops.U_OP,
 
-    pub fn init(opcode: u7, rd: u5, imm: i32) !InstructionU {
+    pub fn init(opcode: u7, rd: u5, imm: i32) FatalError!InstructionU {
         var name: []const u8 = "UNDEFINED_U";
         var op: ops.U_OP = undefined;
 
@@ -446,7 +468,7 @@ pub const InstructionU = struct {
             },
             else => {
                 // std.log.err("Invalid/Unexpected opcode (0x{x:02X}) passed to InstructionU.init", .{opcode});
-                return error.UnexpectedInstruction;
+                return FatalError.InstructionUnexpectedOpcode;
             },
         }
 
@@ -478,7 +500,7 @@ pub const InstructionJ = struct {
 
     op: ops.J_OP,
 
-    pub fn init(opcode: u7, rd: u5, imm: i32) !InstructionJ {
+    pub fn init(opcode: u7, rd: u5, imm: i32) FatalError!InstructionJ {
         var name: []const u8 = "UNDEFINED_J";
         var op: ops.J_OP = undefined;
 
@@ -489,7 +511,7 @@ pub const InstructionJ = struct {
             },
             else => {
                 // std.log.err("Invalid/Unexpected opcode (0x{x:02X}) passed to InstructionJ.init", .{opcode});
-                return error.UnexpectedInstruction;
+                return FatalError.InstructionUnexpectedOpcode;
             },
         }
 

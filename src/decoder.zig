@@ -5,6 +5,8 @@ const rv_consts = @import("encoding_constants.zig");
 
 const instr = @import("instruction_formats.zig");
 
+const FatalError = @import("traps.zig").FatalError;
+
 pub const Decoder = struct {
     fn extractOpcode(instruction: u32) rv_consts.Opcode {
         return @as(rv_consts.Opcode, @truncate(instruction & 0x7F));
@@ -71,7 +73,7 @@ pub const Decoder = struct {
         return @as(i32, imm_signed_n);
     }
 
-    pub fn decode(instruction_bits: u32) !instr.DecodedInstruction {
+    pub fn decode(instruction_bits: u32) FatalError!instr.DecodedInstruction {
         const opcode = Decoder.extractOpcode(instruction_bits);
 
         switch (opcode) {
@@ -127,8 +129,7 @@ pub const Decoder = struct {
                 ) };
             },
             else => {
-                // std.log.err("Decoder: Unknown opcode: 0b{b:0>7} (0x{x:02X}) in instruction 0x{X:0>8}", .{ opcode, opcode, instruction_bits });
-                return .{ .Illegal = instruction_bits };
+                return FatalError.InstructionUnexpectedOpcode;
             },
         }
     }

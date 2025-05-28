@@ -52,6 +52,7 @@ pub const VM = struct {
 
     pub fn run(self: *VM, max_steps: ?u64) !void {
         std.debug.print("VM run loop starting...\n", .{});
+
         while (!self.is_halted) {
             if (max_steps) |limit| {
                 if (self.steps_executed >= limit) {
@@ -63,16 +64,27 @@ pub const VM = struct {
             }
 
             // CPU.step uses self.cpu.ram internally
-            self.cpu.step() catch |err| {
-                std.log.err("VM Error during CPU step {d} at PC 0x{X:0>8}: {}\n", .{
-                    self.steps_executed,
-                    self.cpu.pc,
-                    err,
-                });
-                self.cpu.dumpRegs();
-                self.is_halted = true;
-                return err;
-            };
+            const maybe_trap = self.cpu.step();
+
+            if (maybe_trap) |trap| {
+
+                // A TRAP occurred! 'trap_value' holds the Trap union.
+                std.log.debug("TRAP @ 0x{X:0>8}: {any}", .{ self.cpu.pc, trap });
+
+                // Now, switch on the *kind* of trap.
+                switch (trap) {
+                    .Requested => {},
+
+                    .Debug => {},
+
+                    .Fatal => |fatal_data| {
+                        std.log.err("FATAL TRAP @ 0x{X:0>8}: {any}", .{ self.cpu.pc, fatal_data });
+                        self.cpu.dumpRegs();
+                        self.halt();
+                        return error.FatalTrapOccurred;
+                    },
+                }
+            }
 
             self.steps_executed += 1;
         }
