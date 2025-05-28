@@ -10,6 +10,5 @@ pub fn main() !void {
 
     try vm.loadProgram("zi5c/program.elf");
 
-    try vm.run(1000); // Run for a maximum of 1000 steps
-
+    try vm.run(1000);
 }

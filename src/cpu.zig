@@ -15,6 +15,8 @@ pub const CPU = struct {
     regs: [32]u32,
     ram: *RAM,
 
+    current_instruction: ?DecodedInstruction = null,
+
     pub fn init(allocator: std.mem.Allocator, ram: *RAM) !*CPU {
         const cpu = try allocator.create(CPU);
 
@@ -22,6 +24,7 @@ pub const CPU = struct {
             .pc = 0,
             .regs = [_]u32{0} ** 32,
             .ram = ram,
+            .current_instruction = undefined,
         };
 
         return cpu;
@@ -67,32 +70,11 @@ pub const CPU = struct {
     // --------------------------------------------
     //            FETCH, DECODE, EXECUTE
     // --------------------------------------------
-    pub fn fetch(self: *CPU) FatalError!u32 {
-        return try self.ram.readWord(self.pc);
-    }
-
-    pub fn decode(instruction: u32) FatalError!void {
-        return try decoder.decode(instruction);
-    }
-
-    pub fn execute(self: *CPU, instr: DecodedInstruction) !void {
-        instr.execute(self) catch |err| {
-            switch (err) {
-                error.IllegalInstruction => {
-                    return err;
-                },
-                else => {
-                    std.debug.print("Error executing instruction:\n", .{});
-                    instr.display();
-                    std.debug.print("Error: {}\n", .{err});
-                    return err;
-                },
-            }
-        };
-    }
 
     pub fn step(self: *CPU) ?Trap {
-        const istruction_bits = self.fetch() catch |err| {
+        self.current_instruction = null;
+
+        const instruction_bits = self.ram.readWord(self.pc) catch |err| {
             std.log.err(
                 \\Error fetching instruction: {any}
                 \\PC: {X:0>8}
@@ -100,24 +82,17 @@ pub const CPU = struct {
             return Trap{ .Fatal = err };
         };
 
-        const decoded_instruction = decoder.decode(istruction_bits) catch |err| {
+        const decoded_instruction = decoder.decode(instruction_bits) catch |err| {
             std.log.err(
                 \\Error decoding instruction: {any}
                 \\PC: 0x{X:0>8}
                 \\Instruction bits: {b:0>32}
-            , .{ err, self.pc, istruction_bits });
+            , .{ err, self.pc, instruction_bits });
             return Trap{ .Fatal = err };
         };
 
-        self.execute(decoded_instruction) catch |err| {
-            std.log.err(
-                \\Error executing instruction: {any}
-                \\PC: 0x{X:0>8}
-                \\Instruction: {any}
-            , .{ err, self.pc, decoded_instruction });
-            decoded_instruction.display();
-            return Trap{ .Fatal = FatalError.Internal };
-        };
-        return null;
+        self.current_instruction = decoded_instruction;
+
+        return decoded_instruction.execute(self);
     }
 };

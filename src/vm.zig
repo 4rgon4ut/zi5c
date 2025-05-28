@@ -4,6 +4,8 @@ const RAM = @import("ram.zig").RAM;
 const loadELF = @import("loader.zig").loadELF;
 const rv_abi = @import("abi_regs.zig");
 
+const RequestedTrap = @import("traps.zig").RequestedTrap;
+
 pub const VM = struct {
     cpu: *CPU,
     ram: *RAM,
@@ -67,18 +69,26 @@ pub const VM = struct {
             const maybe_trap = self.cpu.step();
 
             if (maybe_trap) |trap| {
-
-                // A TRAP occurred! 'trap_value' holds the Trap union.
-                std.log.debug("TRAP @ 0x{X:0>8}: {any}", .{ self.cpu.pc, trap });
-
-                // Now, switch on the *kind* of trap.
                 switch (trap) {
-                    .Requested => {},
+                    .Requested => |trap_type| {
+                        std.log.info(
+                            \\REQUESTED TRAP: {any}
+                            \\PC: 0x{X:0>8}
+                            \\Instruction:
+                        , .{ trap_type, self.cpu.pc });
 
-                    .Debug => {},
+                        self.cpu.current_instruction.?.display();
+                        try self.handleEnvTrap(trap_type);
+                    },
 
-                    .Fatal => |fatal_data| {
-                        std.log.err("FATAL TRAP @ 0x{X:0>8}: {any}", .{ self.cpu.pc, fatal_data });
+                    .Fatal => |err| {
+                        std.log.err(
+                            \\FATAL TRAP: {any}
+                            \\PC: 0x{X:0>8}
+                            \\Instruction:
+                        , .{ err, self.cpu.pc });
+
+                        self.cpu.current_instruction.?.display();
                         self.cpu.dumpRegs();
                         self.halt();
                         return error.FatalTrapOccurred;
@@ -90,6 +100,61 @@ pub const VM = struct {
         }
 
         std.debug.print("VM run loop finished. Total steps: {d}. PC: 0x{X:0>8}\n", .{ self.steps_executed, self.cpu.pc });
+    }
+
+    fn handleEnvTrap(self: *VM, trap: RequestedTrap) !void {
+        const current_pc = self.cpu.pc;
+
+        switch (trap) {
+            .ECALL => {
+                const syscall_num = self.cpu.readReg(rv_abi.REG_A7);
+
+                switch (syscall_num) {
+                    93 => { // SYSCALL EXIT
+                        const exit_code = self.cpu.readReg(rv_abi.REG_A0);
+                        std.log.info("ECALL: exit({d}). Halting...", .{exit_code});
+                        return self.halt();
+                    },
+
+                    64 => { // SYSCALL WRITE
+                        const fd = self.cpu.readReg(rv_abi.REG_A0);
+                        const buf_addr = self.cpu.readReg(rv_abi.REG_A1);
+                        const count = self.cpu.readReg(rv_abi.REG_A2);
+
+                        std.log.info("ECALL: write(fd={d}, addr=0x{x}, count={d})", .{ fd, buf_addr, count });
+
+                        // Only handle stdout (1) and stderr (2)
+                        if (fd == 1 or fd == 2) {
+                            var i: u32 = 0;
+                            while (i < count) : (i += 1) {
+                                const byte = try self.ram.readByte(buf_addr + i);
+                                _ = try std.io.getStdOut().writer().writeByte(byte);
+                            }
+                            // Success: return number of bytes written
+                            self.cpu.writeReg(rv_abi.REG_A0, count);
+                        } else {
+                            std.log.warn("ECALL: write to unsupported fd {d}", .{fd});
+                            self.cpu.writeReg(rv_abi.REG_A0, 0xFFFFFFFF); // -1 in 32-bit two's complement
+                        }
+                    },
+
+                    else => {
+                        std.log.warn("ECALL: Unexpected syscall number {d}", .{syscall_num});
+                        // Failure: return -1 (or -ENOSYS)
+                        self.cpu.writeReg(rv_abi.REG_A0, 0xFFFFFFFF);
+                    },
+                }
+            },
+
+            .EBREAK => {
+                std.log.warn("EBREAK encountered at PC 0x{X:0>8}. Halting.", .{current_pc});
+                return self.halt();
+            },
+        }
+
+        // IMPORTANT: If we didn't halt, we must advance the PC
+        // to execute the instruction *after* the ECALL/EBREAK.
+        self.cpu.pc = current_pc + 4;
     }
 
     pub fn halt(self: *VM) void {

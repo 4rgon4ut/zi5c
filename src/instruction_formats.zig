@@ -5,6 +5,7 @@ const ops = @import("ops_logic.zig");
 const CPU = @import("cpu.zig").CPU;
 
 const FatalError = @import("traps.zig").FatalError;
+const Trap = @import("traps.zig").Trap;
 
 pub const DecodedInstruction = union(enum) {
     I: InstructionI,
@@ -13,20 +14,15 @@ pub const DecodedInstruction = union(enum) {
     B: InstructionB,
     U: InstructionU,
     J: InstructionJ,
-    Illegal: u32, // TODO: make error type?
 
-    pub fn execute(self: *const DecodedInstruction, cpu: *CPU) !void {
+    pub fn execute(self: *const DecodedInstruction, cpu: *CPU) ?Trap {
         switch (self.*) {
-            .R => |r_payload| try r_payload.execute(cpu),
-            .I => |i_payload| try i_payload.execute(cpu),
-            .S => |s_payload| try s_payload.execute(cpu),
-            .B => |b_payload| try b_payload.execute(cpu),
-            .U => |u_payload| try u_payload.execute(cpu),
-            .J => |j_payload| try j_payload.execute(cpu),
-            .Illegal => |raw_bits| {
-                std.log.err("Attempting to execute illegal instruction (raw: 0x{X:0>8}) from DecodedInstruction.execute", .{raw_bits});
-                return error.IllegalInstruction;
-            },
+            .R => |r_payload| return r_payload.execute(cpu),
+            .I => |i_payload| return i_payload.execute(cpu),
+            .S => |s_payload| return s_payload.execute(cpu),
+            .B => |b_payload| return b_payload.execute(cpu),
+            .U => |u_payload| return u_payload.execute(cpu),
+            .J => |j_payload| return j_payload.execute(cpu),
         }
     }
 
@@ -38,7 +34,6 @@ pub const DecodedInstruction = union(enum) {
             .B => |b_payload| b_payload.display(),
             .U => |u_payload| u_payload.display(),
             .J => |j_payload| j_payload.display(),
-            .Illegal => |raw_bits| std.debug.print("Instruction: ILLEGAL (0x{X:0>8})\n", .{raw_bits}),
         }
     }
 };
@@ -204,8 +199,8 @@ pub const InstructionI = struct {
         std.debug.print("imm: {d}\n", .{self.imm});
     }
 
-    pub fn execute(self: *const InstructionI, cpu: *CPU) !void {
-        try self.op(cpu, self.rd, self.rs1, self.imm);
+    pub fn execute(self: *const InstructionI, cpu: *CPU) ?Trap {
+        return self.op(cpu, self.rd, self.rs1, self.imm);
     }
 };
 
@@ -305,8 +300,8 @@ pub const InstructionR = struct {
         std.debug.print("rs2: {d}\n", .{self.rs2});
     }
 
-    pub fn execute(self: *const InstructionR, cpu: *CPU) !void {
-        try self.op(cpu, self.rd, self.rs1, self.rs2);
+    pub fn execute(self: *const InstructionR, cpu: *CPU) ?Trap {
+        return self.op(cpu, self.rd, self.rs1, self.rs2);
     }
 };
 
@@ -365,9 +360,9 @@ pub const InstructionS = struct {
         std.debug.print("rs2: {d}\n", .{self.rs2});
         std.debug.print("imm: {d}\n", .{self.imm});
     }
-    pub fn execute(self: *const InstructionS, cpu: *CPU) !void {
+    pub fn execute(self: *const InstructionS, cpu: *CPU) ?Trap {
         // cpu: *CPU, rs1: u5, rs2: u5, imm: i32
-        try self.op(cpu, self.rs1, self.rs2, self.imm);
+        return self.op(cpu, self.rs1, self.rs2, self.imm);
     }
 };
 
@@ -439,9 +434,9 @@ pub const InstructionB = struct {
         std.debug.print("imm: {d}\n", .{self.imm});
     }
 
-    pub fn execute(self: *const InstructionB, cpu: *CPU) !void {
+    pub fn execute(self: *const InstructionB, cpu: *CPU) ?Trap {
         // cpu: *CPU, rs1: u5, rs2: u5, imm: i32
-        try self.op(cpu, self.rs1, self.rs2, self.imm);
+        return self.op(cpu, self.rs1, self.rs2, self.imm);
     }
 };
 
@@ -486,9 +481,9 @@ pub const InstructionU = struct {
         std.debug.print("imm: {d}\n", .{self.imm});
     }
 
-    pub fn execute(self: *const InstructionU, cpu: *CPU) !void {
+    pub fn execute(self: *const InstructionU, cpu: *CPU) ?Trap {
         // cpu: *CPU, rd: u5, imm: i32
-        try self.op(cpu, self.rd, self.imm);
+        return self.op(cpu, self.rd, self.imm);
     }
 };
 
@@ -529,8 +524,8 @@ pub const InstructionJ = struct {
         std.debug.print("imm: {d}\n", .{self.imm});
     }
 
-    pub fn execute(self: *const InstructionJ, cpu: *CPU) !void {
+    pub fn execute(self: *const InstructionJ, cpu: *CPU) ?Trap {
         // cpu: *CPU, rd: u5, imm: i32
-        try self.op(cpu, self.rd, self.imm);
+        return self.op(cpu, self.rd, self.imm);
     }
 };
