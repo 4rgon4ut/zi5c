@@ -8,17 +8,14 @@ pub const RAM_BASE: u32 = 0x00000000;
 pub const RAM = struct {
     buffer: []u8, // entire usable RAM
 
-    // GLOBAL LAYOUT
     ram_base: u32,
-    ram_end: u32, // ram_base + buffer.len
+    ram_end: u32,
 
-    // STACK
-    stack_top: u32, // initial SP value
-    stack_limit: u32, // lowest valid stack address
+    stack_top: u32,
+    stack_limit: u32,
 
-    // HEAP
     heap_start: u32,
-    // NOTE: heap_current_break: u32, // Current top of allocated heap data
+    // NOTE: heap_current_break: u32,
 
     pub fn init(allocator: std.mem.Allocator, total_size: usize, stack_size: u32) !*RAM {
         if (total_size == 0 or stack_size == 0 or stack_size > total_size) {
