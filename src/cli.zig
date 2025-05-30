@@ -30,7 +30,6 @@ fn displayHelp() void {
     std.debug.print(USAGE_FMT, .{ PROGRAM_NAME, DEFAULT_MEM_SIZE_BYTES, DEFAULT_STACK_SIZE_BYTES });
 }
 
-// Function to parse command-line arguments
 pub fn parseArgs(argv: [][:0]u8) !Args {
     var args = Args{ .exe_path = undefined };
     var idx: usize = 1;
@@ -40,8 +39,6 @@ pub fn parseArgs(argv: [][:0]u8) !Args {
         const current_arg = argv[idx];
 
         if (current_arg[0] != '-') {
-            // No more options, break to handle positional arguments (if any)
-            // For this CLI, all arguments are options.
             std.debug.print("Error: Unexpected positional argument: {s}\n", .{current_arg});
             displayHelp();
             return error.UnknownOption;
@@ -107,9 +104,6 @@ pub fn parseArgs(argv: [][:0]u8) !Args {
             return error.UnknownOption;
         }
     }
-
-    // After parsing all options, validate mandatory options and constraints
-
     if (arg_exe_path == null) {
         std.debug.print("Error: --exe <ELF_FILE> option is mandatory.\n", .{});
         displayHelp();

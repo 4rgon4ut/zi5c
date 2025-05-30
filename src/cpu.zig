@@ -19,20 +19,14 @@ pub const CPU = struct {
 
     pub fn init(allocator: std.mem.Allocator, ram: *RAM) !*CPU {
         const cpu = try allocator.create(CPU);
-
         cpu.* = CPU{
             .pc = 0,
             .regs = [_]u32{0} ** 32,
             .ram = ram,
             .current_instruction = undefined,
         };
-
         return cpu;
     }
-
-    // --------------------------------------------
-    //            REGISTERS FUNCTIONS
-    // --------------------------------------------
 
     pub fn writeReg(self: *CPU, reg_num: abi.RegNum, value: u32) void {
         if (reg_num != abi.REG_ZERO) {
@@ -49,13 +43,12 @@ pub const CPU = struct {
 
     pub fn dumpRegs(self: *CPU) void {
         std.debug.print("-------------------- CPU State Dump --------------------\n", .{});
-        std.debug.print("PC : 0x{X:0>8}\n", .{self.pc}); // e.g., PC : 0x00001000
+        std.debug.print("PC : 0x{X:0>8}\n", .{self.pc});
         std.debug.print("-------------------- GPRs (x0-x31) ---------------------\n", .{});
 
         std.debug.print("ABI_NAME (xNN): 0xVALUE\n\n", .{});
         for (self.regs, 0..) |reg, i| {
             const reg_name = abi.getAbiName(abi.REG_LIST[i]);
-
             std.debug.print("{s:<5} (x{any}): {any}", .{ reg_name, i, reg });
             if (i % 4 == 0) {
                 std.debug.print("\n", .{});
@@ -66,10 +59,6 @@ pub const CPU = struct {
         std.debug.print("\n", .{});
         std.debug.print("--------------------- End Dump -------------------------\n", .{});
     }
-
-    // --------------------------------------------
-    //            FETCH, DECODE, EXECUTE
-    // --------------------------------------------
 
     pub fn step(self: *CPU) ?Trap {
         self.current_instruction = null;
@@ -92,7 +81,6 @@ pub const CPU = struct {
         };
 
         self.current_instruction = decoded_instruction;
-
         return decoded_instruction.execute(self);
     }
 };

@@ -64,7 +64,7 @@ pub const VM = struct {
                     return error.MaxStepsReached;
                 }
             }
-            // CPU.step uses self.cpu.ram internally
+
             const maybe_trap = self.cpu.step();
 
             if (maybe_trap) |trap| {
@@ -73,7 +73,6 @@ pub const VM = struct {
                         std.log.info(
                             \\REQUESTED TRAP: {any}
                             \\PC: 0x{X:0>8}
-                            \\Instruction:
                         , .{ trap_type, self.cpu.pc });
 
                         self.cpu.current_instruction.?.display();

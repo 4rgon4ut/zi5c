@@ -193,10 +193,15 @@ pub const InstructionI = struct {
 
     // TODO: rename
     pub fn display(self: *const InstructionI) void {
-        std.debug.print("Instruction: {s}\n", .{self.name});
-        std.debug.print("rd: {d}\n", .{self.rd});
-        std.debug.print("rs1: {d}\n", .{self.rs1});
-        std.debug.print("imm: {d}\n", .{self.imm});
+        std.log.debug("INSTRUCTION: <{s}> rd: {d} (0x{X:0>8}), rs1: {d} (0x{X:0>8}), imm: {d} (0x{X:0>8})\n", .{
+            self.name,
+            self.rd,
+            self.rd,
+            self.rs1,
+            self.rs1,
+            self.imm,
+            self.imm,
+        });
     }
 
     pub fn execute(self: *const InstructionI, cpu: *CPU) ?Trap {
@@ -294,10 +299,15 @@ pub const InstructionR = struct {
     }
 
     pub fn display(self: *const InstructionR) void {
-        std.debug.print("Instruction: {s}\n", .{self.name});
-        std.debug.print("rd: {d}\n", .{self.rd});
-        std.debug.print("rs1: {d}\n", .{self.rs1});
-        std.debug.print("rs2: {d}\n", .{self.rs2});
+        std.log.debug("INSTRUCTION: <{s}> rd: {d} (0x{X:0>8}), rs1: {d} (0x{X:0>8}), rs2: {d} (0x{X:0>8})\n", .{
+            self.name,
+            self.rd,
+            self.rd,
+            self.rs1,
+            self.rs1,
+            self.rs2,
+            self.rs2,
+        });
     }
 
     pub fn execute(self: *const InstructionR, cpu: *CPU) ?Trap {
@@ -355,10 +365,15 @@ pub const InstructionS = struct {
     }
 
     pub fn display(self: *const InstructionS) void {
-        std.debug.print("Instruction: {s}\n", .{self.name});
-        std.debug.print("rs1: {d}\n", .{self.rs1});
-        std.debug.print("rs2: {d}\n", .{self.rs2});
-        std.debug.print("imm: {d}\n", .{self.imm});
+        std.log.debug("INSTRUCTION: <{s}> rs1: {d} (0x{X:0>8}), rs2: {d} (0x{X:0>8}), imm: {d} (0x{X:0>8})\n", .{
+            self.name,
+            self.rs1,
+            self.rs1,
+            self.rs2,
+            self.rs2,
+            self.imm,
+            self.imm,
+        });
     }
     pub fn execute(self: *const InstructionS, cpu: *CPU) ?Trap {
         // cpu: *CPU, rs1: u5, rs2: u5, imm: i32
@@ -428,10 +443,15 @@ pub const InstructionB = struct {
     }
 
     pub fn display(self: *const InstructionB) void {
-        std.debug.print("Instruction: {s}\n", .{self.name});
-        std.debug.print("rs1: {d}\n", .{self.rs1});
-        std.debug.print("rs2: {d}\n", .{self.rs2});
-        std.debug.print("imm: {d}\n", .{self.imm});
+        std.log.debug("INSTRUCTION: <{s}> rs1: {d} (0x{X:0>8}), rs2: {d} (0x{X:0>8}), imm: {d} (0x{X:0>8})\n", .{
+            self.name,
+            self.rs1,
+            self.rs1,
+            self.rs2,
+            self.rs2,
+            self.imm,
+            self.imm,
+        });
     }
 
     pub fn execute(self: *const InstructionB, cpu: *CPU) ?Trap {
@@ -476,9 +496,13 @@ pub const InstructionU = struct {
     }
 
     pub fn display(self: *const InstructionU) void {
-        std.debug.print("Instruction: {s}\n", .{self.name});
-        std.debug.print("rd: {d}\n", .{self.rd});
-        std.debug.print("imm: {d}\n", .{self.imm});
+        std.log.debug("INSTRUCTION: <{s}> rd: {d} (0x{X:0>8}), imm: {d} (0x{X:0>8})\n", .{
+            self.name,
+            self.rd,
+            self.rd,
+            self.imm,
+            self.imm,
+        });
     }
 
     pub fn execute(self: *const InstructionU, cpu: *CPU) ?Trap {
@@ -519,9 +543,13 @@ pub const InstructionJ = struct {
     }
 
     pub fn display(self: *const InstructionJ) void {
-        std.debug.print("Instruction: {s}\n", .{self.name});
-        std.debug.print("rd: {d}\n", .{self.rd});
-        std.debug.print("imm: {d}\n", .{self.imm});
+        std.log.debug("INSTRUCTION: <{s}> rd: {d} (0x{X:0>8}), imm: {d} (0x{X:0>8})\n", .{
+            self.name,
+            self.rd,
+            self.rd,
+            self.imm,
+            self.imm,
+        });
     }
 
     pub fn execute(self: *const InstructionJ, cpu: *CPU) ?Trap {
