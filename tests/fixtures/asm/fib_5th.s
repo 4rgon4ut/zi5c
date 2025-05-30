@@ -1,21 +1,7 @@
-# Calculates the 5th Fibonacci number (F(0)=0, F(1)=1, F(2)=1, F(3)=2, F(4)=3, F(5)=5)
-
-
 .section .text
 .global _start
 
 _start:
-    # Target: Calculate F(5).
-    # F(0) = 0, F(1) = 1
-    # F(n) = F(n-1) + F(n-2)
-    # We need 4 iterations to get from F(1) to F(5).
-
-    # Registers:
-    # t0 (x5): loop counter (number of additions/iterations needed)
-    # a0 (x10): stores F(n-2) initially, then F(n) at the end
-    # a1 (x11): stores F(n-1) initially
-    # t1 (x6): temporary for F(n-1) + F(n-2)
-
     addi  t0, zero, 4   # Initialize loop counter for 4 iterations (to get to F(5) from F(1))
     addi  a0, zero, 0   # a0 = F(0) = 0
     addi  a1, zero, 1   # a1 = F(1) = 1

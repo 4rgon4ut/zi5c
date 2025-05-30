@@ -6,12 +6,9 @@ const zi5c = @import("zi5c");
 const getFixturePath = @import("testing_all.zig").getFixturePath;
 
 test "loadELF function test" {
-
-    // 1. Setup RAM
-    const test_ram_size: u32 = 64 * 1024; // 64K, should be enough for test.elf
-    const stack_size: u32 = 4 * 1024; // 4K stack
+    const test_ram_size: u32 = 64 * 1024;
+    const stack_size: u32 = 4 * 1024;
     var test_ram_buffer: [test_ram_size]u8 = undefined;
-    // Initialize RAM to a known state (e.g., zeros) to ensure loading works correctly
     @memset(&test_ram_buffer, 0x00);
 
     var ram = try zi5c.RAM.init(&test_ram_buffer, stack_size);
@@ -20,10 +17,6 @@ test "loadELF function test" {
 
     try ram.setHeapStart(loadResult.heap_start);
 
-    // 3. Verify the results
-    // Define expected byte patterns based on test.S and test.ld
-
-    // .text section was linked at ORIGIN = 0x0 (RAM_BASE)
     const expected_text_bytes = [_]u8{
         // LOADER WRITES IN LITTLE-ENDIAN
         0x13, 0x05, 0x10, 0x00, // => .word 0x00100513
@@ -55,10 +48,4 @@ test "loadELF function test" {
         try testing.expectEqualSlices(u8, &[_]u8{ 0x00, 0x00, 0x00, 0x00 }, ram.buffer[check_offset .. check_offset + 4]);
         std.debug.print("Memory after loaded data seems untouched.\n", .{});
     }
-
-    // Optional: Check if heap_start was updated correctly if loadELF modifies it.
-    // If loadELF doesn't modify it, you might call ram.setHeapStart() here and test that separately.
-    // const expected_heap_start = (data_offset_in_ram + expected_data_bytes.len + ram.ram_base);
-    // try testing.expectEqual(expected_heap_start, ram.heap_start);
-
 }

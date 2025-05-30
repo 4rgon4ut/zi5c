@@ -43,17 +43,16 @@ pub const VM = struct {
     pub fn loadProgram(self: *VM, elf_path: []const u8) !void {
         const loadResult = try loadELF(self.ram, elf_path);
 
-        std.log.info("Setting Heap Start address to: 0x{X:0>8}\n", .{loadResult.heap_start});
         try self.ram.setHeapStart(loadResult.heap_start);
 
         self.cpu.pc = loadResult.entry_point;
         self.cpu.writeReg(rv_abi.REG_SP, self.ram.stack_top);
-        std.log.info("Loading complete. EP: 0x{X:0>8}, SP=0x{X:0>8}\n", .{ self.cpu.pc, self.cpu.readReg(rv_abi.REG_SP) });
+        std.log.info("Loading complete. EP: 0x{X:0>8}, SP=0x{X:0>8}, HEAP_START=0x{X:0>8}\n", .{ self.cpu.pc, self.cpu.readReg(rv_abi.REG_SP), self.ram.heap_start });
         self.ram.printLayout();
     }
 
     pub fn run(self: *VM, max_steps: ?u64) !void {
-        std.debug.print("VM run loop starting...\n", .{});
+        std.log.info("VM run loop starting...\n", .{});
 
         while (!self.is_halted) {
             if (max_steps) |limit| {
@@ -70,22 +69,13 @@ pub const VM = struct {
             if (maybe_trap) |trap| {
                 switch (trap) {
                     .Requested => |trap_type| {
-                        std.log.info(
-                            \\REQUESTED TRAP: {any}
-                            \\PC: 0x{X:0>8}
-                        , .{ trap_type, self.cpu.pc });
-
+                        std.log.info("REQUESTED TRAP: {any} | PC: 0x{X:0>8}", .{ trap_type, self.cpu.pc });
                         self.cpu.current_instruction.?.display();
                         try self.handleEnvTrap(trap_type);
                     },
 
                     .Fatal => |err| {
-                        std.log.err(
-                            \\FATAL TRAP: {any}
-                            \\PC: 0x{X:0>8}
-                            \\Instruction:
-                        , .{ err, self.cpu.pc });
-
+                        std.log.err("FATAL TRAP: {any} | PC: 0x{X:0>8}", .{ err, self.cpu.pc });
                         self.cpu.current_instruction.?.display();
                         self.cpu.dumpRegs();
                         self.halt();
@@ -95,7 +85,7 @@ pub const VM = struct {
             }
             self.steps_executed += 1;
         }
-        std.debug.print("VM run loop finished. Total steps: {d}. PC: 0x{X:0>8}\n", .{ self.steps_executed, self.cpu.pc });
+        std.log.info("VM run loop finished. Total steps: {d}. PC: 0x{X:0>8}\n", .{ self.steps_executed, self.cpu.pc });
     }
 
     fn handleEnvTrap(self: *VM, trap: RequestedTrap) !void {
@@ -147,7 +137,7 @@ pub const VM = struct {
     }
 
     pub fn halt(self: *VM) void {
-        std.debug.print("VM halt requested.\n", .{});
+        std.log.info("VM halt requested.", .{});
         self.is_halted = true;
     }
 };

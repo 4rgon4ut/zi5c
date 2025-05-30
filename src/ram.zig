@@ -31,7 +31,6 @@ pub const RAM = struct {
 
         const buffer_len_u32: u32 = @intCast(total_size);
         const effective_ram_end: u32 = RAM_BASE + buffer_len_u32;
-        std.debug.print("effective_ram_end: {d}\n", .{effective_ram_end});
 
         const ram = try allocator.create(RAM);
         ram.* = .{
@@ -42,8 +41,6 @@ pub const RAM = struct {
             .stack_limit = effective_ram_end - stack_size,
             .heap_start = 0,
         };
-
-        std.debug.print("ram end: {d}; ram base: {d}\n", .{ ram.ram_end, ram.ram_base });
         return ram;
     }
 
@@ -55,36 +52,25 @@ pub const RAM = struct {
     }
 
     pub fn printLayout(self: *RAM) void {
-        std.debug.print("ram end: {d}; ram base: {d}", .{ self.ram_end, self.ram_base });
         const total_size = self.ram_end - self.ram_base;
-        const loaded_size = self.heap_start - self.ram_base;
-        const stack_size = self.stack_top - self.stack_limit;
+        const image_size = self.heap_start - self.ram_base;
         const heap_size = self.stack_limit - self.heap_start;
+        const stack_size = self.stack_top - self.stack_limit;
 
-        // --- CORRECTED FORMAT SPECIFIER ---
-        const fmt_addr = "0x{X:0>8}"; // Use uppercase hex, zero-pad, right-align, width 8
-
-        std.debug.print("\n--- RAM Layout Summary ---\n", .{});
-        std.debug.print(" Overall RAM : " ++ fmt_addr ++ " - " ++ fmt_addr ++ " (Size: {d} bytes / {d} KB)\n", .{
-            self.ram_base, self.ram_end, total_size, total_size / 1024,
+        std.debug.print("{s: <18}: 0x{X:0>8} - 0x{X:0>8}  (Size: {d} bytes)\n", .{
+            "TOTAL RAM SPACE", self.ram_base, self.ram_end, total_size,
         });
-        std.debug.print("  -> Loaded  : " ++ fmt_addr ++ " - " ++ fmt_addr ++ " (Size: {d} bytes)\n", .{
-            self.ram_base, self.heap_start, loaded_size,
+        std.debug.print("--------------------------------------------------------------------------\n", .{});
+        std.debug.print("{s: <18}: 0x{X:0>8} - 0x{X:0>8}  (Size: {d} bytes)\n", .{
+            "PROGRAM IMAGE", self.ram_base, self.heap_start, image_size,
         });
-        std.debug.print("  -> Heap    : " ++ fmt_addr ++ " - " ++ fmt_addr ++ " (Available: {d} bytes)\n", .{
-            self.heap_start, self.stack_limit, heap_size,
+        std.debug.print("{s: <18}: 0x{X:0>8} - 0x{X:0>8}  (Size: {d} bytes)\n", .{
+            "HEAP", self.heap_start, self.stack_limit, heap_size,
         });
-        std.debug.print("  -> Stack   : " ++ fmt_addr ++ " - " ++ fmt_addr ++ " (Allocated: {d} bytes)\n", .{
-            self.stack_limit, self.stack_top, stack_size,
+        std.debug.print("{s: <18}: 0x{X:0>8} - 0x{X:0>8}  (Size: {d} bytes)\n", .{
+            "STACK", self.stack_limit, self.stack_top, stack_size,
         });
-
-        if (self.heap_start >= self.stack_limit) {
-            // Use the corrected format specifier here too
-            std.debug.print("  !! WARNING: Heap start (" ++ fmt_addr ++ ") overlaps allocated Stack region (limit " ++ fmt_addr ++ ") !!\n", .{
-                self.heap_start, self.stack_limit,
-            });
-        }
-        std.debug.print("--- End of Summary ---\n", .{});
+        std.debug.print("--------------------------------------------------------------------------\n\n", .{});
     }
 
     fn validateAccess(self: *const RAM, addr: u32, size: u32) FatalError!void {
