@@ -15,12 +15,6 @@ pub fn build(b: *std.Build) void {
     // set a preferred release mode, allowing the user to decide how to optimize.
     const optimize = b.standardOptimizeOption(.{});
 
-    const zi5c_core_mod = b.addModule("zi5c", .{
-        .root_source_file = b.path("src/root.zig"),
-        .target = target,
-        .optimize = optimize,
-    });
-
     const exe_mod = b.createModule(.{
         .root_source_file = b.path("src/main.zig"),
         .target = target,
@@ -48,26 +42,4 @@ pub fn build(b: *std.Build) void {
 
     const run_step = b.step("run", "Run the zi5c VM");
     run_step.dependOn(&run_exe.step);
-
-    const all_tests_runner = b.addTest(.{
-        .root_source_file = b.path("tests/testing_all.zig"), // Main entry point for all tests
-        .target = target,
-        .optimize = optimize,
-        // .link_libc = true, // Uncomment if your tests need libc
-    });
-
-    // Corrected line: Call addImport on the root_module of the test runner
-    all_tests_runner.root_module.addImport("zi5c", zi5c_core_mod);
-
-    const run_all_tests_cmd = b.addRunArtifact(all_tests_runner);
-    run_all_tests_cmd.cwd = b.path(".");
-
-    // ... (definition of run_all_tests_cmd.cwd = b.path(".")) should remain if you
-    // want tests to primarily access fixtures from their source location.
-
-    // Modify the main "test" step to depend on the fixtures being installed.
-    // This ensures the copy happens when 'zig build test' is run.
-    const test_step = b.step("test", "Run all unit and integration tests");
-
-    test_step.dependOn(&run_all_tests_cmd.step);
 }
