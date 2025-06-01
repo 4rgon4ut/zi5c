@@ -22,7 +22,7 @@ __Toy__ RISC-V VM supporting RV32I base set.
 
 ## Why
 
-For learning and fun!
+For learning and fun
 
 ## How to use
 __Build the vm binary, it will be put under `./zig-out/bin/zi5c`:__
