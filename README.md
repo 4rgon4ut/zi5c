@@ -57,7 +57,7 @@ __Start execution:__
 Default ram size is `0x1000000 (1mb)`
 
 VM cli:
-```bash
+```log
 Usage: zi5c [OPTIONS] --exe <ELF_FILE>
 
   --exe, -e <ELF_FILE>     Path to the RISC-V ELF executable (mandatory)
