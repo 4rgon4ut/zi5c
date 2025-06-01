@@ -3,11 +3,26 @@
 
 ## What
 
-RISC-V VM with RV32I instruction set.
+__Toy__ RISC-V VM supporting RV32I base set.
 
+- no deps
+- single threaded
+- guest RAM is a single buffer
+- guest programs are mapped directly into RAM from ELFs
+- for zig programs, assembly `_start` routine initializes environment and calls `main` (`./linker/startup.s`)
+- guest programs are intended for a freestanding env
+- static linking
+- *SYSTEM/SYNC calls mostly WIP (`CSR/FENCE`)
+
+  Only two `ECALL` supported: 
+  - `exit (93)`
+  - `write (64)`
+  
+  `EBREAK` works as a halt request
 
 ## Why
 
+For learning and fun!
 
 ## How to use
 __Build the vm binary, it will be put under `./zig-out/bin/zi5c`:__
@@ -52,4 +67,11 @@ Options:
   --stack, -s <SIZE_BYTES> Stack size for VM (default: 131072 bytes, part of total memory)
   --steps <COUNT>          Maximum execution steps (default: 0, unlimited)
   --help, -h               Display this help message and exit                   
+```
+
+### Your own zig program
+
+Make sure to make your `main` function exported to use it as an entry point:
+```zig
+pub export fn main() void {}
 ```
